@@ -171,7 +171,7 @@ coverage report
 
 ## License
 
-Released under the MIT License.
+Released under the MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
