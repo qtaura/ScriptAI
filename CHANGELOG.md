@@ -5,35 +5,21 @@ All notable changes to ScriptAI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2025-03-15
+## [0.1.0] - 2025-10-12
 
 ### Added
-- Initial release of ScriptAI
-- Multi-model AI integration with OpenAI GPT-3.5 and HuggingFace StarCoder
-- Web interface with Flask
-- Command-line interface with interactive mode
-- Syntax highlighting using Prism.js
-- Language detection for proper code formatting
-- Comprehensive test suite for both web and CLI components
-- Save generated code to files
-- Copy code to clipboard functionality
+- Project initialization
+- Created repository structure
+- Added README.md with project description and setup instructions
+- Created professional SVG logo in assets/images/logo.svg
+- Added GitHub templates for issues and pull requests
+- Added CONTRIBUTING.md guidelines
+- Added this CHANGELOG.md file
+- Synchronized main and master branches
 
 ### Changed
-- N/A (initial release)
+- Updated README.md to use the new SVG logo
+- Standardized project documentation
 
 ### Fixed
-- N/A (initial release)
-
-## [0.9.0] - 2025-02-20
-
-### Added
-- Beta release with core functionality
-- Basic web interface
-- Command-line interface prototype
-- Integration with OpenAI API
-
-### Changed
-- N/A (beta release)
-
-### Fixed
-- N/A (beta release)
+- Resolved branch synchronization issues between main and master
