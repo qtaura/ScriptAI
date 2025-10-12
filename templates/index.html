@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Code Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>AI Code Assistant</h1>
+        <p>Describe what code you need, and I'll generate it for you.</p>
+        
+        <div class="input-section">
+            <div class="model-selection">
+                <label for="model-select">Select AI Model:</label>
+                <select id="model-select">
+                    {% for model in models %}
+                    <option value="{{ model.id }}">{{ model.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <textarea id="prompt-input" placeholder="Example: Write a Python function that calculates the Fibonacci sequence"></textarea>
+            <button id="generate-btn">Generate Code</button>
+        </div>
+        
+        <div class="output-section">
+            <h2>Generated Code:</h2>
+            <pre id="code-output"><code>Your generated code will appear here...</code></pre>
+            <div class="output-actions">
+                <button id="copy-btn">Copy Code</button>
+                <button id="save-btn">Save to File</button>
+            </div>
+        </div>
+        
+        <div id="loading" class="hidden">Generating code...</div>
+        <div id="error-message" class="hidden"></div>
+        
+        <div class="info-section">
+            <h3>About This Tool</h3>
+            <p>This AI Code Assistant uses various AI models to generate code based on your descriptions:</p>
+            <ul>
+                <li><strong>OpenAI GPT-3.5</strong>: Powerful commercial model (requires API key)</li>
+                <li><strong>HuggingFace StarCoder</strong>: Open-source code generation model (requires API key)</li>
+                <li><strong>Local Model</strong>: Placeholder for future local model implementation</li>
+            </ul>
+            <p>To use this tool, you need to set up API keys in the .env file.</p>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
