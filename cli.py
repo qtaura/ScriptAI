@@ -280,7 +280,8 @@ class ScriptAICLI:
 
         try:
             with open(CONFIG_FILE, "r") as f:
-                return json.load(f)
+                config = json.load(f)
+                return config if isinstance(config, dict) else default_config
         except (json.JSONDecodeError, OSError):
             return default_config
 

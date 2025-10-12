@@ -17,7 +17,7 @@ class TestCLI(unittest.TestCase):
         code, error = generator.generate("Test prompt")
         self.assertIsNone(code)
         self.assertIsNotNone(error)
-        self.assertIn("not implemented", error.lower())
+        self.assertIn("not implemented", error.lower() if error else "")
 
     @patch("sys.stdout", new_callable=io.StringIO)
     def test_main_help(self, mock_stdout):

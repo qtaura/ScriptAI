@@ -131,14 +131,18 @@ def generate_code():
         # Security validation
         is_valid, error_msg = security_manager.validate_prompt(prompt)
         if not is_valid:
-            security_manager.log_security_event("invalid_prompt", error_msg, client_ip)
+            security_manager.log_security_event(
+                "invalid_prompt", error_msg or "Unknown error", client_ip
+            )
             return jsonify({"error": error_msg}), 400
 
         # Rate limiting
-        within_limit, rate_error = security_manager.check_rate_limit(client_ip)
+        within_limit, rate_error = security_manager.check_rate_limit(
+            client_ip or "unknown"
+        )
         if not within_limit:
             security_manager.log_security_event(
-                "rate_limit_exceeded", rate_error, client_ip
+                "rate_limit_exceeded", rate_error or "Rate limit exceeded", client_ip
             )
             return jsonify({"error": rate_error}), 429
 
