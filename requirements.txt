@@ -8,3 +8,5 @@ coverage==7.2.7
 # Security and monitoring dependencies
 html5lib==1.1
 bleach==6.0.0
+# Type stubs for mypy
+types-requests

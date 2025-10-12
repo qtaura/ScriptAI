@@ -17,7 +17,7 @@ class SecurityManager:
         self.max_prompt_length = max_prompt_length
         self.rate_limit = rate_limit
         self.rate_limit_window = 3600  # 1 hour in seconds
-        self.request_counts = defaultdict(lambda: deque())
+        self.request_counts: Dict[str, deque] = defaultdict(lambda: deque())
         
         # Dangerous patterns to detect
         self.dangerous_patterns = [
@@ -58,7 +58,7 @@ class SecurityManager:
         # Check for excessive repetition (potential spam)
         words = prompt.lower().split()
         if len(words) > 10:
-            word_counts = {}
+            word_counts: Dict[str, int] = {}
             for word in words:
                 word_counts[word] = word_counts.get(word, 0) + 1
                 if word_counts[word] > len(words) * 0.3:  # More than 30% repetition
@@ -134,7 +134,7 @@ class SecurityManager:
         
         return False
     
-    def log_security_event(self, event_type: str, details: str, client_ip: str = None):
+    def log_security_event(self, event_type: str, details: str, client_ip: Optional[str] = None):
         """
         Log security events for monitoring
         

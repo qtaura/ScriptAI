@@ -35,7 +35,7 @@ def filter_csv_by_age(input_file: str, output_file: str, min_age: int = 30) -> i
             reader = csv.DictReader(csvfile)
             
             # Check if 'age' column exists
-            if 'age' not in reader.fieldnames:
+            if reader.fieldnames and 'age' not in reader.fieldnames:
                 raise KeyError("Input CSV must have an 'age' column")
             
             # Store the filtered rows
@@ -50,7 +50,7 @@ def filter_csv_by_age(input_file: str, output_file: str, min_age: int = 30) -> i
                     print(f"Warning: Skipping row with invalid age value: {row['age']}")
             
         # Write the filtered data to the output CSV file
-        if filtered_rows:
+        if filtered_rows and reader.fieldnames:
             with open(output_file, 'w', newline='') as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=reader.fieldnames)
                 writer.writeheader()

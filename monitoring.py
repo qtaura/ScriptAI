@@ -17,9 +17,9 @@ class MonitoringManager:
     def __init__(self, log_file: str = "scriptai.log", max_log_size: int = 10 * 1024 * 1024):
         self.log_file = log_file
         self.max_log_size = max_log_size
-        self.usage_stats = defaultdict(int)
-        self.error_counts = defaultdict(int)
-        self.performance_metrics = deque(maxlen=1000)  # Keep last 1000 requests
+        self.usage_stats: Dict[str, int] = defaultdict(int)
+        self.error_counts: Dict[str, int] = defaultdict(int)
+        self.performance_metrics: deque = deque(maxlen=1000)  # Keep last 1000 requests
         
         # Setup logging
         self.setup_logging()
@@ -40,7 +40,7 @@ class MonitoringManager:
         self.logger = logging.getLogger('ScriptAI')
     
     def log_request(self, model: str, prompt_length: int, response_time: float, 
-                   success: bool, client_ip: str = None, error: str = None):
+                   success: bool, client_ip: Optional[str] = None, error: Optional[str] = None):
         """
         Log a request with metrics
         
@@ -89,7 +89,7 @@ class MonitoringManager:
         if self.usage_stats['total_requests'] % 10 == 0:
             self.save_stats()
     
-    def log_error(self, error_type: str, error_message: str, context: Dict = None):
+    def log_error(self, error_type: str, error_message: str, context: Optional[Dict[str, Any]] = None):
         """
         Log an error with context
         
@@ -146,12 +146,12 @@ class MonitoringManager:
         avg_response_time = sum(m['response_time'] for m in recent_metrics) / total_requests
         
         # Model usage
-        models_used = defaultdict(int)
+        models_used: Dict[str, int] = defaultdict(int)
         for metric in recent_metrics:
             models_used[metric['model']] += 1
         
         # Error counts
-        errors = defaultdict(int)
+        errors: Dict[str, int] = defaultdict(int)
         for metric in recent_metrics:
             if not metric['success'] and metric['error']:
                 errors[metric['error']] += 1
