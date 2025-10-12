@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://via.placeholder.com/200x200.png?text=ScriptAI" alt="ScriptAI Logo" width="200"/>
+  <img src="assets/images/logo.svg" alt="ScriptAI Logo" width="200"/>
   <h1>ScriptAI</h1>
   <p><strong>Enterprise-Grade AI-Powered Code Generation Platform</strong></p>
   <p>
