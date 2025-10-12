@@ -1,125 +1,184 @@
-# ScriptAI
+<div align="center">
+  <img src="https://via.placeholder.com/200x200.png?text=ScriptAI" alt="ScriptAI Logo" width="200"/>
+  <h1>ScriptAI</h1>
+  <p><strong>Enterprise-Grade AI-Powered Code Generation Platform</strong></p>
+  <p>
+    <a href="#features">Features</a> •
+    <a href="#architecture">Architecture</a> •
+    <a href="#installation">Installation</a> •
+    <a href="#usage">Usage</a> •
+    <a href="#testing">Testing</a> •
+    <a href="#roadmap">Roadmap</a> •
+    <a href="#license">License</a>
+  </p>
+</div>
 
-An intelligent code generation bot that can create scripts and code snippets from natural language prompts.
+---
+
+## Overview
+
+ScriptAI is a sophisticated code generation platform that leverages state-of-the-art AI models to transform natural language descriptions into production-ready code. Designed for developers, by developers, ScriptAI streamlines the coding process by generating boilerplate code, complex algorithms, and functional components across multiple programming languages.
 
 ## Features
 
-- Generate code from natural language descriptions
-- Multiple AI model options:
-  - OpenAI GPT-3.5 (requires API key)
-  - HuggingFace StarCoder (free alternative, requires API key)
-  - Local model placeholder (for future implementation)
-- Web interface and CLI options
-- Save generated code to files
-- Copy code to clipboard
+### Core Capabilities
+- **Multi-Model AI Integration**: Seamlessly switch between OpenAI GPT-3.5, HuggingFace StarCoder, or local models
+- **Intelligent Code Generation**: Create complex algorithms and functional components from natural language descriptions
+- **Language Detection**: Automatically identifies programming languages for proper syntax highlighting
+- **Syntax Highlighting**: Implements Prism.js for beautiful, readable code presentation
+- **Multi-Platform Support**: Access via intuitive web interface or powerful command-line tool
 
-## Setup Instructions
+### Developer Experience
+- **Dual Interface Options**: Choose between web UI or CLI based on your workflow
+- **Interactive CLI Mode**: Maintain context across multiple code generation requests
+- **Code Export**: Save generated code directly to files or copy to clipboard
+- **Customizable Models**: Configure which AI models to use based on your requirements
+
+## Architecture
+
+ScriptAI employs a modular architecture designed for extensibility and performance:
+
+```
+ScriptAI/
+├── app.py                 # Web application entry point (Flask)
+├── cli.py                 # Command-line interface
+├── static/                # Static assets
+│   ├── css/               # Styling and UI components
+│   └── js/                # Client-side functionality and Prism.js integration
+├── templates/             # HTML templates
+├── tests/                 # Comprehensive test suite
+│   ├── test_app.py        # Web application tests
+│   └── test_cli.py        # CLI functionality tests
+└── requirements.txt       # Dependency management
+```
+
+## Installation
 
 ### Prerequisites
-
-- Python 3.6 or higher
+- Python 3.6+
 - pip (Python package manager)
+- API keys for selected AI providers (OpenAI and/or HuggingFace)
 
-### Installation
+### Setup Process
 
-1. Clone this repository:
-   ```
+1. **Clone the repository**
+   ```bash
    git clone https://github.com/jailk123/ScriptAI.git
    cd ScriptAI
    ```
 
-2. Create a virtual environment (optional but recommended):
-   ```
+2. **Create a virtual environment**
+   ```bash
    python -m venv venv
    
-   # On Windows
+   # Windows activation
    venv\Scripts\activate
    
-   # On macOS/Linux
+   # macOS/Linux activation
    source venv/bin/activate
    ```
 
-3. Install dependencies:
-   ```
+3. **Install dependencies**
+   ```bash
    pip install -r requirements.txt
    ```
 
-4. Set up API keys:
-   - Copy the example environment file: `cp .env.example .env`
-   - Edit the `.env` file and add your API keys
-   - You only need one of these keys to use the application
-   - Get OpenAI API key from: https://platform.openai.com/api-keys
-   - Get HuggingFace API key from: https://huggingface.co/settings/tokens
-   - **IMPORTANT**: Never commit your `.env` file with real API keys to GitHub
+4. **Configure API credentials**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your API keys
+   ```
+   
+   API keys can be obtained from:
+   - OpenAI: https://platform.openai.com/api-keys
+   - HuggingFace: https://huggingface.co/settings/tokens
 
 ## Usage
 
 ### Web Interface
 
-1. Start the web server:
-   ```
+1. **Launch the application server**
+   ```bash
    python app.py
    ```
 
-2. Open your browser and go to:
+2. **Access the web interface**
    ```
    http://127.0.0.1:5000/
    ```
 
-3. Enter your prompt, select a model, and click "Generate Code"
+3. **Generate code**
+   - Enter your requirements in natural language
+   - Select your preferred AI model
+   - Click "Generate Code"
+   - View syntax-highlighted results
+   - Save or copy the generated code
 
 ### Command Line Interface
 
-The CLI supports both interactive and one-off command modes:
-
 #### Interactive Mode
-
-```
+```bash
 python cli.py -i
 ```
 
-This starts an interactive session where you can:
-- Enter prompts and get code responses
-- Switch between models with `model openai|huggingface|local`
-- Save generated code to files
+This launches an interactive session with the following capabilities:
+- Submit multiple prompts while maintaining context
+- Switch models with `model openai|huggingface|local`
+- Save output with `save filename.ext`
 - Exit with `exit` or `quit`
 
-#### One-off Command
-
+#### Direct Command Mode
+```bash
+python cli.py "Create a Python function that implements quicksort" --model openai --file quicksort.py
 ```
-python cli.py "Write a Python function to calculate Fibonacci numbers" --model huggingface
-```
 
-Options:
-- `--model` or `-m`: Select the model (openai, huggingface, local)
-- `--file` or `-f`: Save output to a file
-- `--interactive` or `-i`: Start interactive mode
-
-## Examples
-
-Try these prompts:
-
-1. "Write a Python function to find prime numbers up to n"
-2. "Create a JavaScript function that validates email addresses"
-3. "Make a simple HTML form with name, email, and submit button"
-4. "Write a Java class for a basic banking system with deposit and withdraw methods"
+**Available options:**
+- `--model`, `-m`: Specify AI model (openai, huggingface, local)
+- `--file`, `-f`: Save output directly to specified file
+- `--interactive`, `-i`: Launch interactive mode
 
 ## Testing
 
-Run the tests with:
+ScriptAI includes a comprehensive test suite to ensure reliability and performance:
 
 ```bash
+# Run all tests
 python -m unittest discover tests
+
+# Run with coverage report
+coverage run -m unittest discover tests
+coverage report
 ```
 
-## Future Enhancements
+## Roadmap
 
-- Add syntax highlighting for generated code
-- Implement local model support (e.g., using llama.cpp)
-- Add more language-specific templates
-- Implement user authentication and saved snippets
-- Expand test coverage
+### Q1 2025
+- ✅ Multi-model AI integration
+- ✅ Web and CLI interfaces
+- ✅ Syntax highlighting with Prism.js
+- ✅ Comprehensive test suite
+
+### Q2 2025
+- 🔄 Local model support via llama.cpp
+- 🔄 Language-specific code templates
+- 🔄 Code optimization suggestions
+
+### Q3 2025
+- 📅 User authentication system
+- 📅 Cloud-based snippet storage
+- 📅 Team collaboration features
+- 📅 API endpoint for third-party integration
 
 ## License
 
-MIT
+Released under the MIT License.
+
+---
+
+<div align="center">
+  <p>Developed with ❤️ by ScriptAI Team</p>
+  <p>
+    <a href="https://github.com/jailk123/ScriptAI/issues">Report Bug</a> •
+    <a href="https://github.com/jailk123/ScriptAI/issues">Request Feature</a>
+  </p>
+</div>
