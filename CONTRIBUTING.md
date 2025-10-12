@@ -1,153 +1,302 @@
 # Contributing to ScriptAI
 
-Thank you for considering contributing to ScriptAI! This document outlines the process for contributing to the project and how to report issues.
+Thank you for your interest in contributing to ScriptAI! This document provides guidelines and information for contributors.
 
-## Professional Conduct
+## 🤝 How to Contribute
 
-By participating in this project, you agree to maintain professional conduct and respect all contributors. We are committed to providing a welcoming and inclusive environment for everyone.
+### Reporting Issues
+- Use the GitHub issue tracker
+- Provide detailed reproduction steps
+- Include system information (OS, Python version, etc.)
+- Use appropriate labels (bug, feature, enhancement)
 
-## How Can I Contribute?
+### Suggesting Features
+- Check existing issues first
+- Provide clear use cases and benefits
+- Consider implementation complexity
+- Be specific about requirements
 
-### Reporting Bugs
+### Code Contributions
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Commit with clear messages
+7. Push to your fork
+8. Create a Pull Request
 
-This section guides you through submitting a bug report for ScriptAI. Following these guidelines helps maintainers understand your report, reproduce the issue, and find related reports.
+## 🛠️ Development Setup
 
-Before creating bug reports, please check [this list](#before-submitting-a-bug-report) as you might find out that you don't need to create one. When you are creating a bug report, please [include as many details as possible](#how-do-i-submit-a-good-bug-report).
+### Prerequisites
+- Python 3.6+
+- Git
+- Virtual environment (recommended)
 
-#### Before Submitting A Bug Report
+### Setup Steps
+```bash
+# Clone your fork
+git clone https://github.com/yourusername/ScriptAI.git
+cd ScriptAI
 
-* **Check the [FAQs](https://github.com/jailk123/ScriptAI/wiki/FAQ)** for a list of common questions and problems.
-* **Perform a [search](https://github.com/jailk123/ScriptAI/issues)** to see if the problem has already been reported. If it has and the issue is still open, add a comment to the existing issue instead of opening a new one.
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-#### How Do I Submit A (Good) Bug Report?
+# Install dependencies
+pip install -r requirements.txt
 
-Bugs are tracked as [GitHub issues](https://guides.github.com/features/issues/). Create an issue and provide the following information:
+# Install development dependencies
+pip install -r requirements-dev.txt
 
-* **Use a clear and descriptive title** for the issue to identify the problem.
-* **Describe the exact steps which reproduce the problem** in as many details as possible.
-* **Provide specific examples to demonstrate the steps**. Include links to files or GitHub projects, or copy/pasteable snippets, which you use in those examples.
-* **Describe the behavior you observed after following the steps** and point out what exactly is the problem with that behavior.
-* **Explain which behavior you expected to see instead and why.**
-* **Include screenshots and animated GIFs** which show you following the described steps and clearly demonstrate the problem.
-* **If the problem wasn't triggered by a specific action**, describe what you were doing before the problem happened and share more information using the guidelines below.
+# Run tests
+python -m unittest discover tests -v
+```
 
-### Suggesting Enhancements
+### Development Dependencies
+Create `requirements-dev.txt`:
+```
+pytest>=7.0.0
+pytest-cov>=4.0.0
+black>=22.0.0
+flake8>=5.0.0
+mypy>=1.0.0
+pre-commit>=2.20.0
+```
 
-This section guides you through submitting an enhancement suggestion for ScriptAI, including completely new features and minor improvements to existing functionality.
+## 📝 Code Style Guidelines
 
-#### Before Submitting An Enhancement Suggestion
+### Python Code
+- Follow PEP 8 style guide
+- Use type hints where appropriate
+- Write docstrings for functions and classes
+- Keep functions small and focused
+- Use meaningful variable names
 
-* **Perform a [search](https://github.com/jailk123/ScriptAI/issues)** to see if the enhancement has already been suggested. If it has, add a comment to the existing issue instead of opening a new one.
+### Example:
+```python
+def generate_code(prompt: str, model: str) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Generate code using specified AI model.
+    
+    Args:
+        prompt: User input prompt
+        model: AI model to use ('openai', 'huggingface', 'local')
+        
+    Returns:
+        Tuple of (generated_code, error_message)
+    """
+    # Implementation here
+    pass
+```
 
-#### How Do I Submit A (Good) Enhancement Suggestion?
+### JavaScript Code
+- Use modern ES6+ features
+- Follow consistent indentation
+- Add comments for complex logic
+- Use meaningful function names
 
-Enhancement suggestions are tracked as [GitHub issues](https://guides.github.com/features/issues/). Create an issue and provide the following information:
+### CSS Code
+- Use consistent naming conventions
+- Organize styles logically
+- Use CSS variables for theming
+- Keep selectors specific
 
-* **Use a clear and descriptive title** for the issue to identify the suggestion.
-* **Provide a step-by-step description of the suggested enhancement** in as many details as possible.
-* **Provide specific examples to demonstrate the steps**. Include copy/pasteable snippets which you use in those examples.
-* **Describe the current behavior** and **explain which behavior you expected to see instead** and why.
-* **Explain why this enhancement would be useful** to most ScriptAI users.
-* **List some other applications where this enhancement exists.**
+## 🧪 Testing Guidelines
 
-### Pull Requests
+### Test Coverage
+- Aim for >80% code coverage
+- Test both success and error cases
+- Include edge cases
+- Test with different inputs
 
-The process described here has several goals:
+### Test Structure
+```python
+class TestCodeGenerator(unittest.TestCase):
+    def setUp(self):
+        """Set up test fixtures"""
+        self.generator = CodeGenerator()
+    
+    def test_successful_generation(self):
+        """Test successful code generation"""
+        # Test implementation
+        pass
+    
+    def test_error_handling(self):
+        """Test error handling"""
+        # Test implementation
+        pass
+```
 
-- Maintain ScriptAI's quality
-- Fix problems that are important to users
-- Engage the community in working toward the best possible ScriptAI
-- Enable a sustainable system for ScriptAI's maintainers to review contributions
+### Running Tests
+```bash
+# Run all tests
+python -m unittest discover tests -v
 
-Please follow these steps to have your contribution considered by the maintainers:
+# Run with coverage
+coverage run -m unittest discover tests
+coverage report
+coverage html  # Generate HTML report
+```
 
-1. Follow all instructions in [the template](PULL_REQUEST_TEMPLATE.md)
-2. Follow the [styleguides](#styleguides)
-3. After you submit your pull request, verify that all [status checks](https://help.github.com/articles/about-status-checks/) are passing
+## 🔧 Adding New Features
 
-While the prerequisites above must be satisfied prior to having your pull request reviewed, the reviewer(s) may ask you to complete additional design work, tests, or other changes before your pull request can be ultimately accepted.
+### New AI Models
+1. Create a new generator class in `cli.py`
+2. Follow the existing pattern
+3. Add tests for the new model
+4. Update documentation
 
-## Styleguides
+### New UI Features
+1. Modify templates and static files
+2. Add JavaScript functionality
+3. Update CSS for styling
+4. Test across different browsers
 
-### Git Commit Messages
+### New CLI Commands
+1. Add new argument parser options
+2. Implement command logic
+3. Add help text and examples
+4. Write tests
 
-* Use the present tense ("Add feature" not "Added feature")
-* Use the imperative mood ("Move cursor to..." not "Moves cursor to...")
-* Limit the first line to 72 characters or less
-* Reference issues and pull requests liberally after the first line
-* Consider starting the commit message with an applicable emoji:
-    * 🎨 `:art:` when improving the format/structure of the code
-    * 🐎 `:racehorse:` when improving performance
-    * 🚱 `:non-potable_water:` when plugging memory leaks
-    * 📝 `:memo:` when writing docs
-    * 🐛 `:bug:` when fixing a bug
-    * 🔥 `:fire:` when removing code or files
-    * 💚 `:green_heart:` when fixing the CI build
-    * ✅ `:white_check_mark:` when adding tests
-    * 🔒 `:lock:` when dealing with security
-    * ⬆️ `:arrow_up:` when upgrading dependencies
-    * ⬇️ `:arrow_down:` when downgrading dependencies
-    * 👕 `:shirt:` when removing linter warnings
+## 📚 Documentation
 
-### Python Styleguide
+### Code Documentation
+- Use docstrings for all functions and classes
+- Include parameter descriptions
+- Provide usage examples
+- Document return values
 
-All Python code must adhere to [PEP 8](https://www.python.org/dev/peps/pep-0008/).
+### README Updates
+- Keep installation instructions current
+- Update feature lists
+- Add new examples
+- Update screenshots if UI changes
 
-### JavaScript Styleguide
+### API Documentation
+- Document all endpoints
+- Include request/response examples
+- List error codes
+- Provide authentication info
 
-All JavaScript code must adhere to the [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript).
+## 🐛 Bug Reports
 
-### Documentation Styleguide
+### Before Reporting
+1. Check existing issues
+2. Try latest version
+3. Reproduce the issue
+4. Check logs for errors
 
-* Use [Markdown](https://daringfireball.net/projects/markdown).
-* Reference methods and classes in markdown with the custom `{.method}` syntax:
-    * Reference classes with `{ClassName}`
-    * Reference instance methods with `{ClassName.methodName}`
-    * Reference class methods with `{ClassName.methodName}`
+### Bug Report Template
+```markdown
+**Bug Description**
+A clear description of the bug.
 
-## Additional Notes
+**Steps to Reproduce**
+1. Go to '...'
+2. Click on '...'
+3. See error
 
-### Issue and Pull Request Labels
+**Expected Behavior**
+What should happen.
 
-This section lists the labels we use to help us track and manage issues and pull requests.
+**Actual Behavior**
+What actually happens.
 
-[GitHub search](https://help.github.com/articles/searching-issues/) makes it easy to use labels for finding groups of issues or pull requests you're interested in.
+**Environment**
+- OS: [e.g., Windows 10]
+- Python: [e.g., 3.11.7]
+- ScriptAI Version: [e.g., 1.0.0]
 
-The labels are loosely grouped by their purpose, but it's not required that every issue has a label from every group or that an issue can't have more than one label from the same group.
+**Additional Context**
+Any other relevant information.
+```
 
-Please open an issue if you have suggestions for new labels.
+## 🚀 Feature Requests
 
-#### Type of Issue and Issue State
+### Feature Request Template
+```markdown
+**Feature Description**
+A clear description of the feature.
 
-* `enhancement`: Feature requests.
-* `bug`: Confirmed bugs or reports that are very likely to be bugs.
-* `question`: Questions more than bug reports or feature requests (e.g. how do I do X).
-* `feedback`: General feedback more than bug reports or feature requests.
-* `help-wanted`: The ScriptAI core team would appreciate help from the community in resolving these issues.
-* `beginner`: Less complex issues which would be good first issues to work on for users who want to contribute to ScriptAI.
-* `more-information-needed`: More information needs to be collected about these problems or feature requests (e.g. steps to reproduce).
-* `needs-reproduction`: Likely bugs, but haven't been reliably reproduced.
-* `blocked`: Issues blocked on other issues.
-* `duplicate`: Issues which are duplicates of other issues, i.e. they have been reported before.
-* `wontfix`: The ScriptAI core team has decided not to fix these issues for now, either because they're working as intended or for some other reason.
-* `invalid`: Issues which aren't valid (e.g. user errors).
+**Use Case**
+Why is this feature needed?
 
-#### Topic Categories
+**Proposed Solution**
+How should this feature work?
 
-* `documentation`: Related to any type of documentation.
-* `performance`: Related to performance.
-* `security`: Related to security.
-* `ui`: Related to visual design.
-* `api`: Related to ScriptAI's public APIs.
+**Alternatives**
+Other solutions you've considered.
 
-#### Pull Request Labels
+**Additional Context**
+Any other relevant information.
+```
 
-* `work-in-progress`: Pull requests which are still being worked on, more changes will follow.
-* `needs-review`: Pull requests which need code review, and approval from maintainers or ScriptAI core team.
-* `under-review`: Pull requests being reviewed by maintainers or ScriptAI core team.
-* `requires-changes`: Pull requests which need to be updated based on review comments and then reviewed again.
-* `needs-testing`: Pull requests which need manual testing.
+## 📋 Pull Request Process
 
-## Attribution
+### Before Submitting
+1. Ensure all tests pass
+2. Update documentation if needed
+3. Add tests for new features
+4. Follow code style guidelines
+5. Update CHANGELOG.md
 
-This Contributing guide is adapted from the [Atom Contributing guide](https://github.com/atom/atom/blob/master/CONTRIBUTING.md).
+### PR Template
+```markdown
+**Description**
+Brief description of changes.
+
+**Type of Change**
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
+
+**Testing**
+- [ ] Tests pass locally
+- [ ] New tests added
+- [ ] Manual testing completed
+
+**Checklist**
+- [ ] Code follows style guidelines
+- [ ] Self-review completed
+- [ ] Documentation updated
+- [ ] CHANGELOG.md updated
+```
+
+## 🏷️ Release Process
+
+### Version Numbering
+- Follow Semantic Versioning (MAJOR.MINOR.PATCH)
+- Update VERSION file
+- Update CHANGELOG.md
+- Create GitHub release
+
+### Release Checklist
+- [ ] All tests passing
+- [ ] Documentation updated
+- [ ] Version bumped
+- [ ] CHANGELOG updated
+- [ ] GitHub release created
+- [ ] PyPI package updated (if applicable)
+
+## 🤔 Questions?
+
+- Check existing issues and discussions
+- Join our community Discord (if available)
+- Contact maintainers directly
+- Check the documentation
+
+## 📄 License
+
+By contributing to ScriptAI, you agree that your contributions will be licensed under the MIT License.
+
+## 🙏 Recognition
+
+Contributors will be recognized in:
+- CONTRIBUTORS.md file
+- GitHub contributors page
+- Release notes
+- Project documentation
+
+Thank you for contributing to ScriptAI! 🎉

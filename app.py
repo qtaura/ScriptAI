@@ -1,7 +1,10 @@
 from flask import Flask, render_template, request, jsonify
 import os
 import requests
+import time
 from dotenv import load_dotenv
+from security import SecurityManager
+from monitoring import MonitoringManager
 
 # Load environment variables
 load_dotenv()
@@ -12,6 +15,10 @@ HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 # Initialize Flask app
 app = Flask(__name__)
+
+# Initialize security and monitoring
+security_manager = SecurityManager()
+monitoring_manager = MonitoringManager()
 
 @app.route('/')
 def index():
@@ -92,28 +99,93 @@ def generate_with_local_model(prompt):
 
 @app.route('/generate', methods=['POST'])
 def generate_code():
-    # Get the prompt and model from the request
-    data = request.get_json()
-    prompt = data.get('prompt', '')
-    model = data.get('model', 'openai')
+    start_time = time.time()
+    client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
     
-    if not prompt:
-        return jsonify({"error": "No prompt provided"}), 400
-    
-    # Generate code based on selected model
-    if model == "openai":
-        code, error = generate_with_openai(prompt)
-    elif model == "huggingface":
-        code, error = generate_with_huggingface(prompt)
-    elif model == "local":
-        code, error = generate_with_local_model(prompt)
-    else:
-        return jsonify({"error": f"Unknown model: {model}"}), 400
-    
-    if error:
-        return jsonify({"error": error}), 500
-    
-    return jsonify({"code": code})
+    try:
+        # Get the prompt and model from the request
+        data = request.get_json()
+        prompt = data.get('prompt', '')
+        model = data.get('model', 'openai')
+        
+        # Security validation
+        is_valid, error_msg = security_manager.validate_prompt(prompt)
+        if not is_valid:
+            security_manager.log_security_event("invalid_prompt", error_msg, client_ip)
+            return jsonify({"error": error_msg}), 400
+        
+        # Rate limiting
+        within_limit, rate_error = security_manager.check_rate_limit(client_ip)
+        if not within_limit:
+            security_manager.log_security_event("rate_limit_exceeded", rate_error, client_ip)
+            return jsonify({"error": rate_error}), 429
+        
+        if not prompt:
+            return jsonify({"error": "No prompt provided"}), 400
+        
+        # Generate code based on selected model
+        if model == "openai":
+            code, error = generate_with_openai(prompt)
+        elif model == "huggingface":
+            code, error = generate_with_huggingface(prompt)
+        elif model == "local":
+            code, error = generate_with_local_model(prompt)
+        else:
+            return jsonify({"error": f"Unknown model: {model}"}), 400
+        
+        response_time = time.time() - start_time
+        
+        # Log the request
+        monitoring_manager.log_request(
+            model=model,
+            prompt_length=len(prompt),
+            response_time=response_time,
+            success=error is None,
+            client_ip=client_ip,
+            error=error
+        )
+        
+        if error:
+            return jsonify({"error": error}), 500
+        
+        return jsonify({"code": code})
+        
+    except Exception as e:
+        response_time = time.time() - start_time
+        monitoring_manager.log_error("unexpected_error", str(e), {"client_ip": client_ip})
+        monitoring_manager.log_request(
+            model="unknown",
+            prompt_length=0,
+            response_time=response_time,
+            success=False,
+            client_ip=client_ip,
+            error=str(e)
+        )
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint"""
+    health_status = monitoring_manager.check_health()
+    return jsonify(health_status)
+
+@app.route('/stats')
+def get_stats():
+    """Get usage statistics"""
+    stats = monitoring_manager.get_usage_stats(hours=24)
+    return jsonify(stats)
+
+@app.route('/performance')
+def get_performance():
+    """Get performance metrics"""
+    metrics = monitoring_manager.get_performance_metrics()
+    return jsonify(metrics)
+
+@app.route('/security-stats')
+def get_security_stats():
+    """Get security statistics"""
+    stats = security_manager.get_security_stats()
+    return jsonify(stats)
 
 if __name__ == '__main__':
     app.run(debug=True)
