@@ -1,0 +1,163 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scriptai"
+version = "1.0.0"
+description = "Enterprise-Grade AI-Powered Code Generation Platform"
+readme = "README.md"
+license = "MIT"
+authors = [
+    {name = "ScriptAI Team", email = "team@scriptai.dev"}
+]
+maintainers = [
+    {name = "ScriptAI Team", email = "team@scriptai.dev"}
+]
+keywords = ["ai", "code-generation", "openai", "huggingface", "cli", "web"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "flask>=2.3.3",
+    "openai>=0.27.0",
+    "python-dotenv>=0.19.0",
+    "requests>=2.28.1",
+    "argparse>=1.4.0",
+    "pytest>=7.3.1",
+    "coverage>=7.2.7",
+    "html5lib>=1.1",
+    "bleach>=6.0.0",
+    "types-requests",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=22.0.0",
+    "flake8>=5.0.0",
+    "mypy>=1.0.0",
+    "pytest-cov>=4.0.0",
+    "bandit>=1.7.0",
+    "safety>=2.0.0",
+    "pre-commit>=2.20.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/jailk123/ScriptAI"
+Documentation = "https://github.com/jailk123/ScriptAI#readme"
+Repository = "https://github.com/jailk123/ScriptAI.git"
+Issues = "https://github.com/jailk123/ScriptAI/issues"
+Changelog = "https://github.com/jailk123/ScriptAI/blob/main/CHANGELOG.md"
+
+[project.scripts]
+scriptai = "cli:main"
+
+[project.gui-scripts]
+scriptai-gui = "app:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scriptai*"]
+exclude = ["tests*", "examples*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.html", "*.css", "*.js", "*.svg"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "requests.*",
+    "flask.*",
+    "openai.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "tests/*",
+    "examples/*",
+    "venv/*",
+    ".venv/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "examples"]
+skips = ["B101", "B601"]
