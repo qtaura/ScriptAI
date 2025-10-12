@@ -104,13 +104,21 @@ Try these prompts:
 3. "Make a simple HTML form with name, email, and submit button"
 4. "Write a Java class for a basic banking system with deposit and withdraw methods"
 
+## Testing
+
+Run the tests with:
+
+```bash
+python -m unittest discover tests
+```
+
 ## Future Enhancements
 
 - Add syntax highlighting for generated code
 - Implement local model support (e.g., using llama.cpp)
 - Add more language-specific templates
 - Implement user authentication and saved snippets
-- Add unit tests
+- Expand test coverage
 
 ## License
 

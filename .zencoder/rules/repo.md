@@ -3,35 +3,90 @@ description: Repository Information Overview
 alwaysApply: true
 ---
 
-# AI Code Assistant Bot Information
+# ScriptAI Information
 
 ## Summary
-An intelligent code generation bot that can create scripts and code snippets from natural language prompts. The project appears to be in its initial setup phase with minimal structure in place.
+ScriptAI is an intelligent code generation tool that creates code snippets from natural language prompts. It offers both a web interface and a command-line interface (CLI), supporting multiple AI models including OpenAI GPT-3.5, HuggingFace StarCoder, and a placeholder for future local model implementation.
 
 ## Structure
-The repository has a simple structure with the following components:
-- **Root Directory**: Contains the README.md file with a brief project description
-- **static/**: Directory likely intended for static assets (currently empty)
-- **templates/**: Directory likely intended for template files (currently empty)
+- **app.py**: Flask web application with routes for homepage and code generation API
+- **cli.py**: Command-line interface with interactive and one-off command modes
+- **templates/**: Contains HTML templates for the web interface
+- **static/**: Contains CSS and JavaScript files for the web interface
+- **.env & .env.example**: Environment configuration for API keys
+- **.gitignore**: Specifies files to exclude from version control
+- **requirements.txt**: Python dependencies
 
-## Project Status
-This project appears to be in the very early stages of development or setup. The repository structure suggests it might be intended as a web application (given the static and templates directories which are common in web frameworks), but no implementation files or configuration are present yet.
+## Language & Runtime
+**Language**: Python 3.6+
+**Web Framework**: Flask 2.0.1
+**Package Manager**: pip
+**Key Libraries**: 
+- openai 0.27.0
+- python-dotenv 0.19.0
+- requests 2.28.1
+- argparse 1.4.0
 
-### Potential Implementation Details
-Based on the directory structure:
-- The project might be intended as a web application with static assets and templates
-- Common web frameworks that use this structure include Flask, Django (Python), or various JavaScript frameworks
-- No language-specific files, build configurations, or dependency management files are present yet
+## Dependencies
+**Main Dependencies**:
+- Flask: Web framework for the application interface
+- OpenAI: Client library for OpenAI API integration
+- Requests: HTTP library for API calls to HuggingFace
+- python-dotenv: For loading environment variables from .env file
 
-## Next Steps for Development
-To continue development of this project, consider:
-1. Selecting a programming language and framework
-2. Setting up dependency management
-3. Creating initial implementation files
-4. Adding configuration for development environment
-5. Implementing the core functionality for code generation
+## Build & Installation
+```bash
+# Create virtual environment (optional)
+python -m venv venv
+venv\Scripts\activate  # Windows
+source venv/bin/activate  # macOS/Linux
 
-## Repository Information
-**Created**: The repository contains minimal setup with only a README.md file
-**Last Modified**: 10/12/2025 (README.md)
-**Main Branch**: Not determined (no version control information available)
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up API keys
+cp .env.example .env
+# Edit .env with your API keys
+```
+
+## Usage
+**Web Interface**:
+```bash
+python app.py
+# Access at http://127.0.0.1:5000/
+```
+
+**CLI - Interactive Mode**:
+```bash
+python cli.py -i
+```
+
+**CLI - One-off Command**:
+```bash
+python cli.py "Write a Python function to calculate Fibonacci numbers" --model huggingface
+```
+
+## Features
+- Multiple AI model support (OpenAI, HuggingFace, local placeholder)
+- Web interface with model selection and code generation
+- Interactive CLI with model switching
+- Code saving to files
+- Copy to clipboard functionality
+
+## Project Components
+
+### Web Interface
+- **Main File**: app.py
+- **Template**: templates/index.html
+- **JavaScript**: static/js/script.js
+- **CSS**: static/css/style.css
+- **Features**: Model selection, code generation, copy to clipboard, save to file
+
+### Command Line Interface
+- **Main File**: cli.py
+- **Features**: Interactive mode, one-off commands, model switching, file saving
+
+### AI Integration
+- **OpenAI**: Integration with GPT-3.5 for commercial code generation
+- **HuggingFace**: Integration with StarCoder as a free alternative
+- **Local Model**: Placeholder for future implementation
