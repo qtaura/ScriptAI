@@ -16,48 +16,48 @@ def filter_csv_by_age(input_file: str, output_file: str, min_age: int = 30) -> i
     """
     Reads a CSV file, filters rows where the 'age' column is greater than the specified value,
     and writes the result to a new CSV file.
-    
+
     Args:
         input_file: Path to the input CSV file
         output_file: Path to the output CSV file
         min_age: Minimum age to include in the output (default: 30)
-        
+
     Returns:
         Number of rows written to the output file
-    
+
     Raises:
         FileNotFoundError: If the input file doesn't exist
         KeyError: If the input CSV doesn't have an 'age' column
     """
     try:
         # Read the input CSV file
-        with open(input_file, 'r', newline='') as csvfile:
+        with open(input_file, "r", newline="") as csvfile:
             reader = csv.DictReader(csvfile)
-            
+
             # Check if 'age' column exists
-            if reader.fieldnames and 'age' not in reader.fieldnames:
+            if reader.fieldnames and "age" not in reader.fieldnames:
                 raise KeyError("Input CSV must have an 'age' column")
-            
+
             # Store the filtered rows
             filtered_rows = []
             for row in reader:
                 try:
                     # Convert age to integer and compare
-                    if int(row['age']) > min_age:
+                    if int(row["age"]) > min_age:
                         filtered_rows.append(row)
                 except ValueError:
                     # Skip rows with non-integer age values
                     print(f"Warning: Skipping row with invalid age value: {row['age']}")
-            
+
         # Write the filtered data to the output CSV file
         if filtered_rows and reader.fieldnames:
-            with open(output_file, 'w', newline='') as csvfile:
+            with open(output_file, "w", newline="") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=reader.fieldnames)
                 writer.writeheader()
                 writer.writerows(filtered_rows)
-                
+
         return len(filtered_rows)
-    
+
     except FileNotFoundError:
         print(f"Error: Input file '{input_file}' not found")
         raise
@@ -71,10 +71,10 @@ def main():
     if len(sys.argv) < 3:
         print(f"Usage: {sys.argv[0]} <input_file.csv> <output_file.csv> [min_age]")
         sys.exit(1)
-    
+
     input_file = sys.argv[1]
     output_file = sys.argv[2]
-    
+
     # Get optional min_age parameter
     min_age = 30
     if len(sys.argv) >= 4:
@@ -83,10 +83,12 @@ def main():
         except ValueError:
             print(f"Error: min_age must be an integer, got '{sys.argv[3]}'")
             sys.exit(1)
-    
+
     try:
         rows_written = filter_csv_by_age(input_file, output_file, min_age)
-        print(f"Successfully filtered CSV. {rows_written} rows written to {output_file}")
+        print(
+            f"Successfully filtered CSV. {rows_written} rows written to {output_file}"
+        )
     except Exception as e:
         print(f"Failed to process CSV: {str(e)}")
         sys.exit(1)

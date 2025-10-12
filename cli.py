@@ -25,6 +25,7 @@ import argparse
 import os
 import sys
 import json
+
 try:
     import readline
 except ImportError:
@@ -61,97 +62,122 @@ EXAMPLE_PROMPTS = {
     "Algorithm Implementation": "Implement a depth-first search algorithm in Python for traversing a graph represented as an adjacency list.",
     "Testing": "Write a pytest test suite for a function that validates email addresses.",
     "DevOps": "Create a Docker Compose file for a web application with a Node.js backend, React frontend, and MongoDB database.",
-    "Data Science": "Write a Python function using pandas and matplotlib to create a visualization of time series data with moving averages."
+    "Data Science": "Write a Python function using pandas and matplotlib to create a visualization of time series data with moving averages.",
 }
+
 
 class CodeGenerator:
     """Base class for code generation models"""
-    
-    def __init__(self, temperature: float = DEFAULT_TEMPERATURE, max_tokens: int = DEFAULT_MAX_TOKENS):
+
+    def __init__(
+        self,
+        temperature: float = DEFAULT_TEMPERATURE,
+        max_tokens: int = DEFAULT_MAX_TOKENS,
+    ):
         self.temperature = temperature
         self.max_tokens = max_tokens
-        
+
     def generate(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
         """Generate code from prompt"""
         raise NotImplementedError("Subclasses must implement this method")
-    
+
     @staticmethod
     def format_code(code: str) -> str:
         """Format the generated code for display"""
         if not code:
             return ""
-        
+
         # If code contains markdown code blocks, extract them
         if "```" in code:
             parts = code.split("```")
             # Find the first code block
             for i in range(1, len(parts)):
-                if parts[i].strip() and not parts[i].startswith(('python', 'javascript', 'java', 'cpp')):
+                if parts[i].strip() and not parts[i].startswith(
+                    ("python", "javascript", "java", "cpp")
+                ):
                     return parts[i].strip()
             # If we didn't find a suitable block, return the original with markers removed
             return code.replace("```", "").strip()
-        
+
         return code.strip()
+
 
 class OpenAIGenerator(CodeGenerator):
     """Generate code using OpenAI API"""
-    
+
     def generate(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
         try:
             import openai
-            
+
             if not OPENAI_API_KEY:
-                return None, "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable."
-            
+                return (
+                    None,
+                    "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.",
+                )
+
             openai.api_key = OPENAI_API_KEY
-            
+
             system_prompt = (
                 "You are an expert programmer that generates clean, efficient, and well-documented code. "
                 "Focus on providing only the code implementation with minimal explanation. "
                 "Include helpful comments within the code to explain complex parts. "
                 "If the language isn't specified, choose the most appropriate one for the task."
             )
-            
+
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 max_tokens=self.max_tokens,
-                temperature=self.temperature
+                temperature=self.temperature,
             )
-            
+
             code = response.choices[0].message.content
             return self.format_code(code), None
-            
+
         except ImportError:
-            return None, "OpenAI package not installed. Install it with: pip install openai"
+            return (
+                None,
+                "OpenAI package not installed. Install it with: pip install openai",
+            )
         except Exception as e:
             return None, f"Error with OpenAI API: {str(e)}"
 
+
 class HuggingFaceGenerator(CodeGenerator):
     """Generate code using HuggingFace Inference API"""
-    
+
     def generate(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
         try:
             import requests
-            
+
             if not HUGGINGFACE_API_KEY:
-                return None, "HuggingFace API key not found. Please set the HUGGINGFACE_API_KEY environment variable."
-            
+                return (
+                    None,
+                    "HuggingFace API key not found. Please set the HUGGINGFACE_API_KEY environment variable.",
+                )
+
             API_URL = "https://api-inference.huggingface.co/models/bigcode/starcoder"
             headers = {"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"}
-            
+
             # Prepare the prompt for code generation
             full_prompt = f"Generate code for the following request: {prompt}\n\n```"
-            
+
             response = requests.post(
                 API_URL,
                 headers=headers,
-                json={"inputs": full_prompt, "parameters": {"max_new_tokens": self.max_tokens, "temperature": self.temperature, "return_full_text": False}}
+                json={
+                    "inputs": full_prompt,
+                    "parameters": {
+                        "max_new_tokens": self.max_tokens,
+                        "temperature": self.temperature,
+                        "return_full_text": False,
+                    },
+                },
             )
-            
+
             if response.status_code == 200:
                 result = response.json()
                 # Extract the generated code
@@ -161,28 +187,33 @@ class HuggingFaceGenerator(CodeGenerator):
                 return "No code generated", None
             else:
                 return None, f"Error: API returned status code {response.status_code}"
-                
+
         except ImportError:
-            return None, "Requests package not installed. Install it with: pip install requests"
+            return (
+                None,
+                "Requests package not installed. Install it with: pip install requests",
+            )
         except Exception as e:
             return None, f"Error with HuggingFace API: {str(e)}"
 
+
 class LocalModelGenerator(CodeGenerator):
     """Generate code using a local model"""
-    
+
     def generate(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
         # This is a placeholder for future implementation with local models
         return None, "Local model generation not implemented yet. Coming in Q2 2025."
 
+
 class ScriptAICLI:
     """Main CLI application class"""
-    
+
     def __init__(self):
         self.history = []
         self.last_generated_code = None
         self.config = self._load_config()
         self._setup_directories()
-        
+
         # Set default model based on available API keys
         if OPENAI_API_KEY:
             self.current_model = "openai"
@@ -190,23 +221,35 @@ class ScriptAICLI:
             self.current_model = "huggingface"
         else:
             self.current_model = "local"
-            
+
         # Initialize generators
         self.generators = {
             "openai": OpenAIGenerator(
-                temperature=self.config.get("openai", {}).get("temperature", DEFAULT_TEMPERATURE),
-                max_tokens=self.config.get("openai", {}).get("max_tokens", DEFAULT_MAX_TOKENS)
+                temperature=self.config.get("openai", {}).get(
+                    "temperature", DEFAULT_TEMPERATURE
+                ),
+                max_tokens=self.config.get("openai", {}).get(
+                    "max_tokens", DEFAULT_MAX_TOKENS
+                ),
             ),
             "huggingface": HuggingFaceGenerator(
-                temperature=self.config.get("huggingface", {}).get("temperature", DEFAULT_TEMPERATURE),
-                max_tokens=self.config.get("huggingface", {}).get("max_tokens", DEFAULT_MAX_TOKENS)
+                temperature=self.config.get("huggingface", {}).get(
+                    "temperature", DEFAULT_TEMPERATURE
+                ),
+                max_tokens=self.config.get("huggingface", {}).get(
+                    "max_tokens", DEFAULT_MAX_TOKENS
+                ),
             ),
             "local": LocalModelGenerator(
-                temperature=self.config.get("local", {}).get("temperature", DEFAULT_TEMPERATURE),
-                max_tokens=self.config.get("local", {}).get("max_tokens", DEFAULT_MAX_TOKENS)
-            )
+                temperature=self.config.get("local", {}).get(
+                    "temperature", DEFAULT_TEMPERATURE
+                ),
+                max_tokens=self.config.get("local", {}).get(
+                    "max_tokens", DEFAULT_MAX_TOKENS
+                ),
+            ),
         }
-    
+
     def _setup_directories(self):
         """Create necessary directories if they don't exist"""
         if not os.path.exists(CONFIG_DIR):
@@ -214,80 +257,78 @@ class ScriptAICLI:
                 os.makedirs(CONFIG_DIR)
             except OSError as e:
                 print(f"Warning: Could not create config directory: {e}")
-    
+
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from file"""
         default_config = {
             "openai": {
                 "temperature": DEFAULT_TEMPERATURE,
-                "max_tokens": DEFAULT_MAX_TOKENS
+                "max_tokens": DEFAULT_MAX_TOKENS,
             },
             "huggingface": {
                 "temperature": DEFAULT_TEMPERATURE,
-                "max_tokens": DEFAULT_MAX_TOKENS
+                "max_tokens": DEFAULT_MAX_TOKENS,
             },
             "local": {
                 "temperature": DEFAULT_TEMPERATURE,
-                "max_tokens": DEFAULT_MAX_TOKENS
-            }
+                "max_tokens": DEFAULT_MAX_TOKENS,
+            },
         }
-        
+
         if not os.path.exists(CONFIG_FILE):
             return default_config
-            
+
         try:
-            with open(CONFIG_FILE, 'r') as f:
+            with open(CONFIG_FILE, "r") as f:
                 return json.load(f)
         except (json.JSONDecodeError, OSError):
             return default_config
-    
+
     def _save_config(self):
         """Save configuration to file"""
         try:
-            with open(CONFIG_FILE, 'w') as f:
+            with open(CONFIG_FILE, "w") as f:
                 json.dump(self.config, f, indent=2)
         except OSError as e:
             print(f"Warning: Could not save config: {e}")
-    
+
     def _add_to_history(self, prompt: str, model: str):
         """Add a prompt to history"""
-        self.history.append({
-            "timestamp": datetime.now().isoformat(),
-            "prompt": prompt,
-            "model": model
-        })
-        
+        self.history.append(
+            {"timestamp": datetime.now().isoformat(), "prompt": prompt, "model": model}
+        )
+
         # Trim history to maximum size
         if len(self.history) > MAX_HISTORY:
             self.history = self.history[-MAX_HISTORY:]
-    
+
     def _save_history(self):
         """Save command history to file"""
         try:
-            with open(HISTORY_FILE, 'w') as f:
+            with open(HISTORY_FILE, "w") as f:
                 json.dump(self.history, f, indent=2)
         except OSError as e:
             print(f"Warning: Could not save history: {e}")
-    
+
     def _load_history(self):
         """Load command history from file"""
         if not os.path.exists(HISTORY_FILE):
             return
-            
+
         try:
-            with open(HISTORY_FILE, 'r') as f:
+            with open(HISTORY_FILE, "r") as f:
                 self.history = json.load(f)
         except (json.JSONDecodeError, OSError):
             self.history = []
-    
+
     def _clear_screen(self):
         """Clear the terminal screen"""
         os_name = platform.system()
-        if os_name == 'Windows':
-            os.system('cls')
+        if os_name == "Windows":
+            os.system("cls")
         else:
-            os.system('clear')
-    
+            os.system("clear")
+
     def _print_header(self):
         """Print the application header"""
         print("\n" + "=" * 80)
@@ -296,7 +337,7 @@ class ScriptAICLI:
         print(f"Current Model: {self.current_model}")
         print("Type 'help' to see available commands")
         print("=" * 80 + "\n")
-    
+
     def _print_help(self):
         """Print help information"""
         help_text = """
@@ -312,7 +353,7 @@ Available Commands:
 Any other input will be treated as a prompt for code generation.
         """
         print(textwrap.dedent(help_text))
-    
+
     def _print_examples(self):
         """Print example prompts"""
         print("\nExample Prompts:")
@@ -321,87 +362,91 @@ Any other input will be treated as a prompt for code generation.
             print(f"\n{category}:")
             print(f"  {prompt}")
         print("\n" + "=" * 80)
-    
+
     def _show_history(self):
         """Show command history"""
         if not self.history:
             print("No history available.")
             return
-            
+
         print("\nCommand History:")
         print("=" * 80)
         for i, entry in enumerate(self.history, 1):
-            timestamp = datetime.fromisoformat(entry["timestamp"]).strftime("%Y-%m-%d %H:%M:%S")
+            timestamp = datetime.fromisoformat(entry["timestamp"]).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
             print(f"{i}. [{timestamp}] [{entry['model']}] {entry['prompt'][:50]}...")
         print("=" * 80)
-    
+
     def _save_code_to_file(self, filename: str) -> bool:
         """Save generated code to file"""
         if not self.last_generated_code:
             print("No code has been generated yet.")
             return False
-            
+
         try:
-            with open(filename, 'w') as f:
+            with open(filename, "w") as f:
                 f.write(self.last_generated_code)
             print(f"Code saved to {filename}")
             return True
         except OSError as e:
             print(f"Error saving file: {e}")
             return False
-    
+
     def _switch_model(self, model_name: str) -> bool:
         """Switch the current AI model"""
         if model_name not in self.generators:
             print(f"Unknown model: {model_name}")
             print(f"Available models: {', '.join(self.generators.keys())}")
             return False
-            
+
         self.current_model = model_name
         print(f"Switched to model: {self.current_model}")
         return True
-    
+
     def _generate_code(self, prompt: str) -> bool:
         """Generate code from prompt"""
         if not prompt.strip():
             return False
-            
+
         print(f"\nGenerating code using {self.current_model}...")
-        
+
         generator = self.generators.get(self.current_model)
         if not generator:
             print(f"Error: Model {self.current_model} not available.")
             return False
-        
+
         code, error = generator.generate(prompt)
-        
+
         if error:
             print(f"Error: {error}")
             if "API key not found" in error:
-                print(f"To set up your API key, create a .env file with {self.current_model.upper()}_API_KEY=your_key_here")
+                print(
+                    f"To set up your API key, create a .env file with {self.current_model.upper()}_API_KEY=your_key_here"
+                )
             return False
-        
+
         self._add_to_history(prompt, self.current_model)
         self.last_generated_code = code
-        
+
         print("\n" + "=" * 40 + " GENERATED CODE " + "=" * 40)
         print(code)
         print("=" * 90)
-        
+
         return True
-    
+
     def run_interactive_mode(self):
         """Run the CLI in interactive mode"""
         self._load_history()
         self._print_header()
-        
+
         while True:
             try:
                 user_input = input("\nScriptAI> ").strip()
-                
+
                 if not user_input:
                     continue
-                    
+
                 # Process commands
                 if user_input.lower() in ["exit", "quit"]:
                     break
@@ -424,7 +469,7 @@ Any other input will be treated as a prompt for code generation.
                 else:
                     # Treat as code generation prompt
                     self._generate_code(user_input)
-            
+
             except KeyboardInterrupt:
                 print("\nOperation cancelled.")
                 continue
@@ -433,64 +478,78 @@ Any other input will be treated as a prompt for code generation.
                 break
             except Exception as e:
                 print(f"An error occurred: {str(e)}")
-        
+
         # Save history before exiting
         self._save_history()
         print("\nThank you for using ScriptAI CLI!")
-    
+
     def run_direct_mode(self, prompt: str, output_file: Optional[str] = None):
         """Run the CLI in direct mode with a single prompt"""
         success = self._generate_code(prompt)
-        
+
         if success and output_file:
             self._save_code_to_file(output_file)
+
 
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
         description="ScriptAI - Enterprise-Grade AI-Powered Code Generation Platform",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=textwrap.dedent("""
+        epilog=textwrap.dedent(
+            """
         Examples:
           python cli.py -i                                                # Interactive mode
           python cli.py "Create a Python function to sort a list" -m openai  # Direct mode
           python cli.py --examples                                        # Show example prompts
-        """)
+        """
+        ),
     )
-    
-    parser.add_argument("prompt", nargs="?", help="The prompt describing the code you want to generate")
+
+    parser.add_argument(
+        "prompt", nargs="?", help="The prompt describing the code you want to generate"
+    )
     parser.add_argument("--file", "-f", help="Save the generated code to this file")
-    parser.add_argument("--model", "-m", choices=["openai", "huggingface", "local"], 
-                        default="openai" if OPENAI_API_KEY else "huggingface",
-                        help="Model to use for code generation")
-    parser.add_argument("--interactive", "-i", action="store_true", help="Run in interactive mode")
+    parser.add_argument(
+        "--model",
+        "-m",
+        choices=["openai", "huggingface", "local"],
+        default="openai" if OPENAI_API_KEY else "huggingface",
+        help="Model to use for code generation",
+    )
+    parser.add_argument(
+        "--interactive", "-i", action="store_true", help="Run in interactive mode"
+    )
     parser.add_argument("--examples", action="store_true", help="Show example prompts")
-    parser.add_argument("--version", "-v", action="version", version=f"ScriptAI CLI v{VERSION}")
-    
+    parser.add_argument(
+        "--version", "-v", action="version", version=f"ScriptAI CLI v{VERSION}"
+    )
+
     args = parser.parse_args()
-    
+
     cli = ScriptAICLI()
-    
+
     # Set the model from command line argument
     if args.model:
         cli._switch_model(args.model)
-    
+
     # Show examples if requested
     if args.examples:
         cli._print_examples()
         return
-    
+
     # Interactive mode
     if args.interactive:
         cli.run_interactive_mode()
         return
-    
+
     # Direct mode
     if not args.prompt:
         parser.print_help()
         return
-    
+
     cli.run_direct_mode(args.prompt, args.file)
+
 
 if __name__ == "__main__":
     try:
