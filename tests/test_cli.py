@@ -7,12 +7,13 @@ from unittest.mock import patch
 # Add parent directory to path to import cli
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from cli import generate_with_local_model
+from cli import LocalModelGenerator
 
 class TestCLI(unittest.TestCase):
     def test_local_model_generation(self):
         """Test that the local model placeholder returns an error message"""
-        code, error = generate_with_local_model("Test prompt")
+        generator = LocalModelGenerator()
+        code, error = generator.generate("Test prompt")
         self.assertIsNone(code)
         self.assertIsNotNone(error)
         self.assertIn("not implemented", error.lower())
@@ -26,7 +27,7 @@ class TestCLI(unittest.TestCase):
                 main()
                 output = mock_stdout.getvalue()
                 self.assertIn("usage:", output.lower())
-                self.assertIn("generate code from natural language prompts", output.lower())
+                self.assertIn("scriptai", output.lower())
             except SystemExit:
                 # argparse may exit, which is expected
                 pass
