@@ -41,16 +41,12 @@ ScriptAI is a sophisticated code generation platform that leverages state-of-the
 - **Code Export**: Save generated code directly to files or copy to clipboard
 - **Customizable Models**: Configure which AI models to use based on your requirements
 
-Note on multi-model adapters:
+### Model Adapters
 - Adapters provide a modular structure for model selection in the web app and CLI.
 - Current tests cover the `local` adapter end-to-end; OpenAI and HuggingFace adapters require valid keys and may not be fully covered by tests.
 - The UI lists available models based on configured API keys.
 
-## What's New in 1.1.0
-- Enhanced local model support with improved runtime behavior and fallbacks
-- Advanced security improvements: stricter headers and safer defaults
-- Performance optimizations across request handling and rendering paths
-- Extended monitoring dashboard with richer metrics and charts
+ 
 
 ## How It Works
 
@@ -423,6 +419,9 @@ python -m unittest discover tests
 # Run with coverage report
 coverage run -m unittest discover tests
 coverage report
+
+# Or with pytest (recommended)
+pytest -q
 ```
 
 ## 🔒 Security Features
@@ -532,16 +531,21 @@ python -m unittest discover tests -v
 - CI/CD pipeline
 - Community contribution guidelines
 
-### 🔄 In Progress (v1.2.0)
+### 🟢 Released (v1.2.0)
+- Prometheus metrics with `/metrics` (text) and `/metrics-json` (JSON)
+- Request instrumentation: counters, latency histogram, error tracking
+- Flask-Limiter per-IP and per-route limits on `/generate`
+- Clean JSON error handling for invalid payloads and unknown models
+- Tests for metrics exposure, error paths, and 429 rate-limit responses
+- Documentation and formatting updates aligned with Black 23.12.1
+
+### 📅 Planned (v1.3.0)
 - User authentication system
 - Cloud-based snippet storage
 - Team collaboration features
 - API endpoint for third-party integration
 - Advanced analytics and reporting
 - Plugin system for custom models
-
-### 📅 Planned (v1.3.0+)
-- To be announced
 
 ## License
 
