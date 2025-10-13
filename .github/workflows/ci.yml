@@ -51,7 +51,8 @@ jobs:
     - name: Format check with black
       run: |
         black --version
-        black --check .
+        # Show exact diffs to identify reformat targets
+        black --diff --check .
     
     - name: Test with pytest
       run: |
