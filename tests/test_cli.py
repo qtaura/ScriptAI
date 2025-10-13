@@ -3,6 +3,7 @@ import sys
 import os
 import io
 from unittest.mock import patch
+from typing import cast
 
 # Add parent directory to path to import cli
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,7 +18,8 @@ class TestCLI(unittest.TestCase):
         code, error = generator.generate("Test prompt")
         self.assertIsNotNone(code)
         self.assertIsNone(error)
-        self.assertTrue(len(code) > 0)
+        # Narrow Optional[str] for MyPy
+        self.assertTrue(len(cast(str, code)) > 0)
 
     @patch("sys.stdout", new_callable=io.StringIO)
     def test_main_help(self, mock_stdout):
