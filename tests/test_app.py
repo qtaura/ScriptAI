@@ -53,6 +53,18 @@ class TestApp(unittest.TestCase):
         self.assertIn("code", data)
         self.assertTrue(len(data["code"]) > 0)
 
+    def test_prometheus_metrics_endpoint(self):
+        """Ensure /metrics exposes Prometheus text format when installed."""
+        response = self.app.get("/metrics")
+        # Accept either Prometheus content type or JSON error if client missing
+        if response.status_code == 200:
+            # Prometheus text should include HELP/TYPE or metric names
+            body = response.data.decode("utf-8", errors="ignore")
+            self.assertTrue("scriptai_requests_total" in body or "HELP" in body)
+        else:
+            data = json.loads(response.data)
+            self.assertIn("error", data)
+
 
 if __name__ == "__main__":
     unittest.main()

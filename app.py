@@ -1,10 +1,15 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response, g
 import os
 import requests
 import time
 from dotenv import load_dotenv
 from security import SecurityManager
 from monitoring import MonitoringManager
+try:
+    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+except ImportError:  # pragma: no cover
+    generate_latest = None  # type: ignore
+    CONTENT_TYPE_LATEST = "text/plain; charset=utf-8"  # type: ignore
 
 # Load environment variables
 load_dotenv()
@@ -38,6 +43,27 @@ def set_security_headers(response):
         "script-src 'self' https://cdnjs.cloudflare.com; "
         "style-src 'self' https://cdnjs.cloudflare.com"
     )
+    # Record request metrics
+    try:
+        start_time = getattr(g, "_start_time", None)
+        if start_time is not None:
+            duration = time.time() - start_time
+            endpoint = request.path
+            method = request.method
+            status = response.status_code
+            # Use MonitoringManager's Prometheus metrics if available
+            if getattr(monitoring_manager, "request_counter", None) and getattr(
+                monitoring_manager, "request_latency", None
+            ):
+                monitoring_manager.request_counter.labels(
+                    endpoint=endpoint, method=method, status=str(status)
+                ).inc()
+                monitoring_manager.request_latency.labels(
+                    endpoint=endpoint, method=method, status=str(status)
+                ).observe(duration)
+    except Exception:
+        pass
+
     return response
 
 
@@ -298,8 +324,15 @@ def get_performance():
 
 
 @app.route("/metrics")
-def get_metrics():
-    """Get combined metrics for dashboard"""
+def prometheus_metrics():
+    """Expose Prometheus metrics in the standard text format."""
+    if generate_latest is None:
+        return jsonify({"error": "Prometheus client not installed"}), 500
+    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+
+@app.route("/metrics-json")
+def get_metrics_json():
+    """Get combined metrics for dashboard as JSON."""
     return jsonify(
         {
             "usage": monitoring_manager.get_usage_stats(hours=24),
@@ -323,3 +356,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+@app.before_request
+def _start_timer():
+    g._start_time = time.time()

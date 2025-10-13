@@ -397,6 +397,7 @@ coverage report
 - **Request Logging**: Tracks all API requests with timing
 - **Error Tracking**: Monitors and categorizes errors
 - **Performance Metrics**: Response times and success rates
+- **Prometheus Metrics**: Standard `/metrics` endpoint exposes counters and histograms
 - **Security Events**: Logs suspicious activities
 
 ## 🚀 Production Features
@@ -406,6 +407,8 @@ Access real-time metrics at:
 - `http://localhost:5000/health` - Health status
 - `http://localhost:5000/stats` - Usage statistics
 - `http://localhost:5000/performance` - Performance data
+- `http://localhost:5000/metrics` - Prometheus metrics (text format)
+- `http://localhost:5000/metrics-json` - Combined dashboard metrics (JSON)
 
 ### Configuration
 Create `config.json` for advanced settings:

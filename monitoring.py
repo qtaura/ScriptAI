@@ -1,6 +1,6 @@
 """
 Monitoring and logging utilities for ScriptAI
-Tracks usage, errors, and performance metrics
+Tracks usage, errors, and performance metrics, and exposes Prometheus metrics.
 """
 
 import json
@@ -10,6 +10,11 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from collections import defaultdict, deque
 import logging
+try:
+    from prometheus_client import Counter, Histogram
+except ImportError:  # pragma: no cover
+    Counter = None  # type: ignore
+    Histogram = None  # type: ignore
 
 
 class MonitoringManager:
@@ -30,6 +35,9 @@ class MonitoringManager:
         # Load existing stats if available
         self.load_stats()
 
+        # Initialize Prometheus metrics if available
+        self._init_prometheus_metrics()
+
     def setup_logging(self):
         """Setup logging configuration"""
         logging.basicConfig(
@@ -38,6 +46,36 @@ class MonitoringManager:
             handlers=[logging.FileHandler(self.log_file), logging.StreamHandler()],
         )
         self.logger = logging.getLogger("ScriptAI")
+
+    def _init_prometheus_metrics(self):
+        """Initialize Prometheus counters and histograms if the client is installed."""
+        if Counter is None or Histogram is None:
+            # Prometheus client not installed; skip initialization
+            self.request_counter = None
+            self.request_latency = None
+            self.error_counter = None
+            return
+
+        # Total requests by endpoint/method/status
+        self.request_counter = Counter(
+            "scriptai_requests_total",
+            "Total HTTP requests",
+            ["endpoint", "method", "status"],
+        )
+
+        # Request latency histogram
+        self.request_latency = Histogram(
+            "scriptai_request_duration_seconds",
+            "HTTP request latency in seconds",
+            ["endpoint", "method", "status"],
+        )
+
+        # Error counter by type
+        self.error_counter = Counter(
+            "scriptai_errors_total",
+            "Total errors",
+            ["error_type"],
+        )
 
     def log_request(
         self,
@@ -95,6 +133,17 @@ class MonitoringManager:
         if error:
             self.logger.error(f"Error: {error}")
 
+        # Prometheus metrics
+        try:
+            if self.request_counter and self.request_latency:
+                status_label = "success" if success else "error"
+                # Use model as endpoint label when route context is not available
+                self.request_counter.labels(endpoint=model, method="POST", status=status_label).inc()
+                self.request_latency.labels(endpoint=model, method="POST", status=status_label).observe(response_time)
+        except Exception:
+            # Never let metrics raise
+            pass
+
         # Save stats periodically
         if self.usage_stats["total_requests"] % 10 == 0:
             self.save_stats()
@@ -125,6 +174,13 @@ class MonitoringManager:
         self.logger.error(f"Error: {error_type} - {error_message}")
         if context:
             self.logger.error(f"Context: {json.dumps(context)}")
+
+        # Prometheus error counter
+        try:
+            if self.error_counter:
+                self.error_counter.labels(error_type=error_type).inc()
+        except Exception:
+            pass
 
     def get_usage_stats(self, hours: int = 24) -> Dict[str, Any]:
         """

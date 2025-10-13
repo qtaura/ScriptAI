@@ -7,6 +7,8 @@ pytest==7.3.1
 coverage==7.2.7
 # Pin Black for consistent formatting across py310/py311 environments
 black==23.12.1
+# Prometheus metrics exposure
+prometheus-client==0.17.1
 # Security and monitoring dependencies
 html5lib==1.1
 bleach==6.0.0
