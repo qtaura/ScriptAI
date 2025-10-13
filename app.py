@@ -1,10 +1,7 @@
 from flask import Flask, render_template, request, jsonify, Response, g
-try:
-    from flask_limiter import Limiter
-    from flask_limiter.util import get_remote_address
-except Exception:  # pragma: no cover
-    Limiter = None
-    get_remote_address = None
+from typing import Any, TYPE_CHECKING
+if TYPE_CHECKING:  # for type hints only; avoids runtime import issues
+    from flask_limiter import Limiter as LimiterType
 import os
 import requests
 import time
@@ -50,7 +47,14 @@ security_manager = SecurityManager()
 monitoring_manager = MonitoringManager()
 
 # Configure rate limiting (Flask-Limiter) with sane defaults
-if Limiter is not None:
+limiter: Any
+try:
+    from flask_limiter import Limiter
+    _has_limiter = True
+except Exception:  # pragma: no cover
+    _has_limiter = False
+
+if _has_limiter:
     def _rate_key_func():
         # Prefer X-Forwarded-For if present (behind proxies), else remote_addr
         return request.environ.get("HTTP_X_FORWARDED_FOR", request.remote_addr)
