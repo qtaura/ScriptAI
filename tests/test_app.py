@@ -53,6 +53,30 @@ class TestApp(unittest.TestCase):
         self.assertIn("code", data)
         self.assertTrue(len(data["code"]) > 0)
 
+    def test_invalid_json_payload(self):
+        """Invalid JSON should return 400 with a clean error body."""
+        response = self.app.post(
+            "/generate",
+            data="not-json",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        body = json.loads(response.data)
+        self.assertIn("error", body)
+        self.assertEqual(body["error"], "Invalid JSON payload")
+
+    def test_unknown_model(self):
+        """Unknown model should return 400 with clear message."""
+        response = self.app.post(
+            "/generate",
+            data=json.dumps({"prompt": "x", "model": "nope"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        body = json.loads(response.data)
+        self.assertIn("error", body)
+        self.assertTrue("Unknown model" in body["error"])
+
     def test_prometheus_metrics_endpoint(self):
         """Ensure /metrics exposes Prometheus text format when installed."""
         response = self.app.get("/metrics")

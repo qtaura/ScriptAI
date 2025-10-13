@@ -241,6 +241,11 @@ def generate_with_local_model(prompt):
     return _generate_stub(lang, prompt), None
 
 
+def _json_error(message: str, status: int):
+    """Return a minimal JSON error response with given HTTP status."""
+    return jsonify({"error": message}), status
+
+
 @app.route("/generate", methods=["POST"])
 def generate_code():
     start_time = time.time()
@@ -248,9 +253,15 @@ def generate_code():
 
     try:
         # Get the prompt and model from the request
-        data = request.get_json()
-        prompt = data.get("prompt", "")
+        data = request.get_json(silent=True)
+        if data is None or not isinstance(data, dict):
+            return _json_error("Invalid JSON payload", 400)
+
+        prompt = data.get("prompt")
         model = data.get("model", "openai")
+
+        if not isinstance(prompt, str):
+            return _json_error("'prompt' must be a string", 400)
 
         # Security validation
         is_valid, error_msg = security_manager.validate_prompt(prompt)
@@ -258,7 +269,7 @@ def generate_code():
             security_manager.log_security_event(
                 "invalid_prompt", error_msg or "Unknown error", client_ip
             )
-            return jsonify({"error": error_msg}), 400
+            return _json_error(error_msg or "Invalid prompt", 400)
 
         # Rate limiting
         within_limit, rate_error = security_manager.check_rate_limit(
@@ -268,10 +279,10 @@ def generate_code():
             security_manager.log_security_event(
                 "rate_limit_exceeded", rate_error or "Rate limit exceeded", client_ip
             )
-            return jsonify({"error": rate_error}), 429
+            return _json_error(rate_error or "Rate limit exceeded", 429)
 
-        if not prompt:
-            return jsonify({"error": "No prompt provided"}), 400
+        if not prompt.strip():
+            return _json_error("No prompt provided", 400)
 
         # Generate code based on selected model
         if model == "openai":
@@ -281,7 +292,7 @@ def generate_code():
         elif model == "local":
             code, error = generate_with_local_model(prompt)
         else:
-            return jsonify({"error": f"Unknown model: {model}"}), 400
+            return _json_error(f"Unknown model: {model}", 400)
 
         response_time = time.time() - start_time
 
@@ -296,7 +307,9 @@ def generate_code():
         )
 
         if error:
-            return jsonify({"error": error}), 500
+            # Upstream provider errors: return as clean JSON, 502
+            status_code = 502 if model in {"openai", "huggingface"} else 500
+            return _json_error(error, status_code)
 
         return jsonify({"code": code})
 
