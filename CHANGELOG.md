@@ -48,12 +48,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Request instrumentation: counters, latency histogram, and error counts in `monitoring.py`
 - Minimal API error handling: clean JSON errors for invalid JSON and unknown model
 - Tests for `/metrics` endpoint and API error handling
+- Flask-Limiter integration: per-IP rate limiting with per-route limits on `/generate`
+- Tests validating 429 JSON responses when `/generate` exceeds configured limits
 
 ### Changed
 - `/metrics` now serves Prometheus text; previous JSON moved to `/metrics-json`
 - Applied Black 23.12.1 formatting to satisfy Python 3.10/3.11 CI
 - Hooked Flask `before_request`/`after_request` to record request timing and labels
 - Updated README to accurately describe monitoring endpoints
+- README updated with Rate Limiting & Abuse Prevention section and guidance
 
 ### Fixed
 - Resolved mypy typing errors around Prometheus metrics and Flask hooks on py310
@@ -66,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   flexibility.
  - Polished README: added Quickstart section, clarified adapter selection and
    testing coverage, and updated Python requirement to 3.9+
+ - Documented anti-abuse measures: Flask-Limiter defaults, JSON 429 handler, and CLI notes
 
 ### Planned
 - User authentication system

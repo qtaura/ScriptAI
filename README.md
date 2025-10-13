@@ -430,7 +430,7 @@ coverage report
 ### Input Validation & Sanitization
 - **Prompt Validation**: Checks for malicious content and excessive length
 - **XSS Protection**: HTML escaping and script tag removal
-- **Rate Limiting**: Prevents abuse with configurable limits
+- **Rate Limiting**: Enforces per-IP limits via Flask-Limiter to prevent abuse
 - **Input Sanitization**: Removes dangerous patterns and scripts
 
 ### Security Endpoints
@@ -445,6 +445,13 @@ coverage report
 - **Performance Metrics**: Response times and success rates
 - **Prometheus Metrics**: Standard `/metrics` endpoint exposes counters and histograms
 - **Security Events**: Logs suspicious activities
+
+### Rate Limiting & Abuse Prevention
+- The web API uses `Flask-Limiter` with a default limit of `100/hour` per IP.
+- The `/generate` route has a per-route limit; tests enable a stricter `2/min` to verify 429 behavior.
+- 429 responses return a compact JSON body: `{"error": "Rate limit exceeded. Try again later."}`.
+- Customize limits by editing `app.py` (e.g., adjust `default_limits` or per-route limits) or by injecting configuration in `app.config` at app startup.
+- CLI does not enforce rate limiting; for production, apply external controls (shell limits, WAF, API gateway) if needed.
 
 ## 🚀 Production Features
 
