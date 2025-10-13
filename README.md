@@ -19,10 +19,17 @@
 
 ScriptAI is a sophisticated code generation platform that leverages state-of-the-art AI models to transform natural language descriptions into production-ready code. Designed for developers, by developers, ScriptAI streamlines the coding process by generating boilerplate code, complex algorithms, and functional components across multiple programming languages.
 
+## Quickstart
+
+- Install dependencies: `pip install -r requirements.txt`
+- Configure credentials: copy `.env.example` to `.env` and set any API keys
+- Run the web app: `python app.py` and open `http://127.0.0.1:5000/`
+
+
 ## Features
 
 ### Core Capabilities
-- **Multi-Model AI Integration**: Seamlessly switch between OpenAI GPT-3.5, HuggingFace StarCoder, or local models
+- **Multi-Model AI Integration**: Modular adapters for OpenAI, HuggingFace, and local models
 - **Intelligent Code Generation**: Create complex algorithms and functional components from natural language descriptions
 - **Language Detection**: Automatically identifies programming languages for proper syntax highlighting
 - **Syntax Highlighting**: Implements Prism.js for beautiful, readable code presentation
@@ -33,6 +40,11 @@ ScriptAI is a sophisticated code generation platform that leverages state-of-the
 - **Interactive CLI Mode**: Maintain context across multiple code generation requests
 - **Code Export**: Save generated code directly to files or copy to clipboard
 - **Customizable Models**: Configure which AI models to use based on your requirements
+
+Note on multi-model adapters:
+- Adapters provide a modular structure for model selection in the web app and CLI.
+- Current tests cover the `local` adapter end-to-end; OpenAI and HuggingFace adapters require valid keys and may not be fully covered by tests.
+- The UI lists available models based on configured API keys.
 
 ## What's New in 1.1.0
 - Enhanced local model support with improved runtime behavior and fallbacks
@@ -81,7 +93,7 @@ ScriptAI/
 ## Installation
 
 ### Prerequisites
-- Python 3.6+
+- Python 3.9+
 - pip (Python package manager)
 - API keys for selected AI providers (OpenAI and/or HuggingFace)
 

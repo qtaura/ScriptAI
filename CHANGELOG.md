@@ -64,6 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Modular structure exists, but flexibility isn’t fully demonstrated; only the
   primary model is tested. README guidance updated to avoid implying full
   flexibility.
+ - Polished README: added Quickstart section, clarified adapter selection and
+   testing coverage, and updated Python requirement to 3.9+
 
 ### Planned
 - User authentication system
