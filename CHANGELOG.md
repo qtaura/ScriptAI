@@ -31,6 +31,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- GUI entry point: Added `main()` in `app.py` to support `scriptai-gui` and direct execution.
+
+### Changed
+- CI/CD: Switched release step to `softprops/action-gh-release` and enabled generated release notes.
+- CI/CD: Granted `permissions: contents: write` for release workflow.
+
+### Fixed
+- Packaging: Removed legacy license classifier to comply with PEP 639; build succeeds.
+- Release: Resolved "Resource not accessible by integration" by correcting permissions and action.
+
 ### Planned
 - Local model support via llama.cpp
 - Language-specific code templates
