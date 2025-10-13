@@ -220,5 +220,10 @@ def get_security_stats():
     return jsonify(stats)
 
 
-if __name__ == "__main__":
+def main():
+    """GUI script entry point for running the Flask app."""
     app.run(debug=True)
+
+
+if __name__ == "__main__":
+    main()
