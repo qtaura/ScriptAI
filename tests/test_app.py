@@ -2,6 +2,7 @@ import unittest
 import json
 import sys
 import os
+from unittest.mock import patch
 
 # Add parent directory to path to import app
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -123,6 +124,77 @@ class TestApp(unittest.TestCase):
         )
         self.assertEqual(r.status_code, 429)
         body = json.loads(r.data)
+        self.assertIn("error", body)
+
+    def test_security_dangerous_prompt(self):
+        """Dangerous content (script tags) should be rejected with 400."""
+        response = self.app.post(
+            "/generate",
+            data=json.dumps({"prompt": "<script>alert('x')</script>", "model": "local"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        body = json.loads(response.data)
+        self.assertIn("error", body)
+        self.assertTrue("dangerous" in body["error"].lower())
+
+    def test_security_too_long_prompt(self):
+        """Excessively long prompt should be rejected with 400."""
+        long_prompt = "a" * 1200
+        response = self.app.post(
+            "/generate",
+            data=json.dumps({"prompt": long_prompt, "model": "local"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        body = json.loads(response.data)
+        self.assertIn("error", body)
+        self.assertTrue("too long" in body["error"].lower())
+
+    def test_generate_prompt_non_string(self):
+        """Non-string prompt should return 400."""
+        response = self.app.post(
+            "/generate",
+            data=json.dumps({"prompt": 123, "model": "local"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        body = json.loads(response.data)
+        self.assertIn("error", body)
+        self.assertIn("must be a string", body["error"]) 
+
+    def test_adapter_error_openai_returns_502(self):
+        """Upstream adapter error for OpenAI should return 502."""
+
+        class FailingAdapter:
+            def generate(self, prompt):
+                return None, "Upstream error"
+
+        with patch("app.get_adapter", lambda model: FailingAdapter() if model == "openai" else None):
+            response = self.app.post(
+                "/generate",
+                data=json.dumps({"prompt": "x", "model": "openai"}),
+                content_type="application/json",
+            )
+        self.assertEqual(response.status_code, 502)
+        body = json.loads(response.data)
+        self.assertIn("error", body)
+
+    def test_adapter_exception_returns_500(self):
+        """Unhandled adapter exception should be caught and return 500."""
+
+        class ExplodingAdapter:
+            def generate(self, prompt):
+                raise RuntimeError("boom")
+
+        with patch("app.get_adapter", lambda model: ExplodingAdapter() if model == "local" else None):
+            response = self.app.post(
+                "/generate",
+                data=json.dumps({"prompt": "x", "model": "local"}),
+                content_type="application/json",
+            )
+        self.assertEqual(response.status_code, 500)
+        body = json.loads(response.data)
         self.assertIn("error", body)
 
 
