@@ -142,7 +142,6 @@ def generate_with_huggingface(prompt):
             return None, f"Error: API returned status code {response.status_code}"
     except Exception as e:
         return None, f"Error with HuggingFace API: {str(e)}"
-def _detect_language(prompt: str) -> str:
 
 
 def _detect_language(prompt: str) -> str:
