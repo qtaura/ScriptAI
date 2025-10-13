@@ -53,7 +53,6 @@ def index():
     models.append({"id": "local", "name": "Local Model (Placeholder)"})
 
     return render_template("index.html", models=models)
-def generate_with_openai(prompt):
 
 
 def generate_with_openai(prompt):
@@ -94,7 +93,6 @@ def generate_with_openai(prompt):
         return response.choices[0].message.content, None
     except Exception as e:
         return None, f"Error with OpenAI API: {str(e)}"
-def generate_with_huggingface(prompt):
 
 
 def generate_with_huggingface(prompt):
@@ -155,7 +153,6 @@ def _detect_language(prompt: str) -> str:
     if any(k in p for k in ["html", "css", "<!doctype", "<html"]):
         return "html"
     return "python"
-def _generate_stub(lang: str, prompt: str) -> str:
 
 
 def _generate_stub(lang: str, prompt: str) -> str:
@@ -197,7 +194,6 @@ def _generate_stub(lang: str, prompt: str) -> str:
             "</body></html>\n"
         )
     return _generate_stub("python", prompt)
-def generate_with_local_model(prompt):
 
 
 def generate_with_local_model(prompt):
