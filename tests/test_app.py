@@ -130,7 +130,9 @@ class TestApp(unittest.TestCase):
         """Dangerous content (script tags) should be rejected with 400."""
         response = self.app.post(
             "/generate",
-            data=json.dumps({"prompt": "<script>alert('x')</script>", "model": "local"}),
+            data=json.dumps(
+                {"prompt": "<script>alert('x')</script>", "model": "local"}
+            ),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 400)
@@ -161,7 +163,7 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         body = json.loads(response.data)
         self.assertIn("error", body)
-        self.assertIn("must be a string", body["error"]) 
+        self.assertIn("must be a string", body["error"])
 
     def test_adapter_error_openai_returns_502(self):
         """Upstream adapter error for OpenAI should return 502."""
@@ -170,7 +172,10 @@ class TestApp(unittest.TestCase):
             def generate(self, prompt):
                 return None, "Upstream error"
 
-        with patch("app.get_adapter", lambda model: FailingAdapter() if model == "openai" else None):
+        with patch(
+            "app.get_adapter",
+            lambda model: FailingAdapter() if model == "openai" else None,
+        ):
             response = self.app.post(
                 "/generate",
                 data=json.dumps({"prompt": "x", "model": "openai"}),
@@ -187,7 +192,10 @@ class TestApp(unittest.TestCase):
             def generate(self, prompt):
                 raise RuntimeError("boom")
 
-        with patch("app.get_adapter", lambda model: ExplodingAdapter() if model == "local" else None):
+        with patch(
+            "app.get_adapter",
+            lambda model: ExplodingAdapter() if model == "local" else None,
+        ):
             response = self.app.post(
                 "/generate",
                 data=json.dumps({"prompt": "x", "model": "local"}),
