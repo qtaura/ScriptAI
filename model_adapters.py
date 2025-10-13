@@ -145,7 +145,13 @@ def _generate_stub(lang: str, prompt: str) -> str:
         return (
             "<!-- Generated locally based on prompt -->\n"
             f"<!-- {prompt} -->\n"
-            "<!DOCTYPE html><html><head>" "<meta charset=\"utf-8\">" "<title>Generated</title>" "</head>\n" "<body>" "<div id=\"app\">Replace this stub with your implementation</div>" "</body></html>\n"
+            "<!DOCTYPE html><html><head>"
+            "<meta charset=\"utf-8\">"
+            "<title>Generated</title>"
+            "</head>\n"
+            "<body>"
+            "<div id=\"app\">Replace this stub with your implementation</div>"
+            "</body></html>\n"
         )
     return _generate_stub("python", prompt)
 
