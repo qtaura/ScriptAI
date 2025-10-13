@@ -10,66 +10,97 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/toolbar/prism-toolbar.min.css">
 </head>
 <body>
-    <div class="container">
-        <h1>AI Code Assistant</h1>
-        <p>Describe what code you need, and I'll generate it for you.</p>
-        
-        <div class="input-section">
-            <div class="model-selection">
-                <label for="model-select">Select AI Model:</label>
+    <header class="app-header">
+        <div class="brand">
+            <img src="{{ url_for('static', filename='../../assets/images/logo.svg') }}" alt="ScriptAI" class="logo" />
+            <div class="titles">
+                <h1>ScriptAI</h1>
+                <p class="subtitle">AI-Powered Code Generation</p>
+            </div>
+        </div>
+        <nav class="header-links">
+            <a href="/health" target="_blank">Health</a>
+            <a href="/metrics-json" target="_blank">Metrics</a>
+            <a href="https://github.com/jailk123/ScriptAI" target="_blank">GitHub</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="card input-card">
+            <div class="card-header">
+                <h2>Generate Code</h2>
+                <div class="status-badges">
+                    <span class="badge">Model: <span id="model-badge">—</span></span>
+                    <span class="badge muted">Rate Limit: per-route</span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label for="model-select">Model</label>
                 <select id="model-select">
                     {% for model in models %}
                     <option value="{{ model.id }}">{{ model.name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            
-            <textarea id="prompt-input" placeholder="Example: Write a Python function that calculates the Fibonacci sequence"></textarea>
-            <button id="generate-btn">Generate Code</button>
-        </div>
-        
-        <div class="output-section">
-            <h2>Generated Code:</h2>
-            <div class="language-selector">
-                <label for="language-select">Language:</label>
-                <select id="language-select">
-                    <option value="javascript">JavaScript</option>
-                    <option value="python">Python</option>
-                    <option value="java">Java</option>
-                    <option value="csharp">C#</option>
-                    <option value="cpp">C++</option>
-                    <option value="php">PHP</option>
-                    <option value="ruby">Ruby</option>
-                    <option value="go">Go</option>
-                    <option value="rust">Rust</option>
-                    <option value="sql">SQL</option>
-                    <option value="html">HTML</option>
-                    <option value="css">CSS</option>
-                    <option value="bash">Bash</option>
-                    <option value="plaintext">Plain Text</option>
-                </select>
+
+            <div class="form-row">
+                <label for="prompt-input">Prompt</label>
+                <textarea id="prompt-input" placeholder="e.g., Write a Python function that calculates the Fibonacci sequence" rows="8"></textarea>
             </div>
-            <pre id="code-container"><code id="code-output" class="language-javascript">Your generated code will appear here...</code></pre>
+
+            <div class="form-actions">
+                <button id="generate-btn" class="btn primary">Generate Code</button>
+            </div>
+
+            <div id="loading" class="notice hidden">Generating code…</div>
+            <div id="error-message" class="notice error hidden"></div>
+        </section>
+
+        <section class="card output-card">
+            <div class="card-header">
+                <h2>Output</h2>
+                <div class="language-selector">
+                    <label for="language-select">Language</label>
+                    <select id="language-select">
+                        <option value="javascript">JavaScript</option>
+                        <option value="python">Python</option>
+                        <option value="java">Java</option>
+                        <option value="csharp">C#</option>
+                        <option value="cpp">C++</option>
+                        <option value="php">PHP</option>
+                        <option value="ruby">Ruby</option>
+                        <option value="go">Go</option>
+                        <option value="rust">Rust</option>
+                        <option value="sql">SQL</option>
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                        <option value="bash">Bash</option>
+                        <option value="plaintext">Plain Text</option>
+                    </select>
+                </div>
+            </div>
+
+            <pre id="code-container"><code id="code-output" class="language-plaintext">Your generated code will appear here…</code></pre>
             <div class="output-actions">
-                <button id="copy-btn">Copy Code</button>
-                <button id="save-btn">Save to File</button>
+                <button id="copy-btn" class="btn">Copy</button>
+                <button id="save-btn" class="btn">Download</button>
             </div>
-        </div>
-        
-        <div id="loading" class="hidden">Generating code...</div>
-        <div id="error-message" class="hidden"></div>
-        
-        <div class="info-section">
-            <h3>About This Tool</h3>
-            <p>This AI Code Assistant uses various AI models to generate code based on your descriptions:</p>
+        </section>
+
+        <section class="info-section">
+            <h3>Tips</h3>
             <ul>
-                <li><strong>OpenAI GPT-3.5</strong>: Powerful commercial model (requires API key)</li>
-                <li><strong>HuggingFace StarCoder</strong>: Open-source code generation model (requires API key)</li>
-                <li><strong>Local Model</strong>: Placeholder for future local model implementation</li>
+                <li>Use precise, actionable prompts for best results.</li>
+                <li>Choose a model that fits your workload and constraints.</li>
+                <li>Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to generate quickly.</li>
             </ul>
-            <p>To use this tool, you need to set up API keys in the .env file.</p>
-        </div>
-    </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>© ScriptAI • <a href="/stats" target="_blank">Stats</a> • <a href="/performance" target="_blank">Performance</a></p>
+    </footer>
     
     <!-- Add Prism.js scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-core.min.js"></script>

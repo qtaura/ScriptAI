@@ -9,6 +9,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const languageSelect = document.getElementById('language-select');
     const loading = document.getElementById('loading');
     const errorMessage = document.getElementById('error-message');
+    const modelBadge = document.getElementById('model-badge');
+    
+    // Reflect selected model in header badge
+    function updateModelBadge() {
+        if (modelBadge && modelSelect) {
+            const selected = modelSelect.options[modelSelect.selectedIndex];
+            modelBadge.textContent = selected ? selected.textContent : '—';
+        }
+    }
+    updateModelBadge();
+    modelSelect.addEventListener('change', updateModelBadge);
 
     // Function to detect language from code
     function detectLanguage(code) {
@@ -89,6 +100,8 @@ document.addEventListener('DOMContentLoaded', function() {
         errorMessage.classList.add('hidden');
         codeOutput.textContent = 'Generating...';
         codeOutput.className = 'language-plaintext';
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Generating…';
         
         try {
             const response = await fetch('/generate', {
@@ -106,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok) {
                 updateCodeWithHighlighting(data.code);
+                showInfo('Code generated successfully.');
             } else {
                 showError(data.error || 'Failed to generate code. Please try again.');
                 codeOutput.textContent = 'Error generating code. Please try again.';
@@ -116,6 +130,8 @@ document.addEventListener('DOMContentLoaded', function() {
             codeOutput.textContent = 'Connection error. Please try again.';
         } finally {
             loading.classList.add('hidden');
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generate Code';
         }
     });
     
@@ -128,6 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(() => {
                     const originalText = copyBtn.textContent;
                     copyBtn.textContent = 'Copied!';
+                    showSuccess('Code copied to clipboard.');
                     setTimeout(() => {
                         copyBtn.textContent = originalText;
                     }, 2000);
@@ -184,13 +201,42 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }, 100);
+            showSuccess(`Downloaded generated_code${fileExtension}`);
         }
     });
     
     // Helper function to show error messages
+    function clearNotice(el) {
+        if (!el) return;
+        el.textContent = '';
+        el.classList.add('hidden');
+        el.classList.remove('error');
+        el.classList.remove('success');
+        el.classList.remove('info');
+    }
+
     function showError(message) {
         errorMessage.textContent = message;
         errorMessage.classList.remove('hidden');
+        errorMessage.classList.add('error');
+        errorMessage.classList.remove('success');
+        errorMessage.classList.remove('info');
+    }
+
+    function showSuccess(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.remove('hidden');
+        errorMessage.classList.add('success');
+        errorMessage.classList.remove('error');
+        errorMessage.classList.remove('info');
+    }
+
+    function showInfo(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.remove('hidden');
+        errorMessage.classList.add('info');
+        errorMessage.classList.remove('error');
+        errorMessage.classList.remove('success');
     }
     
     // Add keyboard shortcut (Ctrl+Enter) to generate code
