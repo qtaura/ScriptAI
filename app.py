@@ -3,13 +3,22 @@ import os
 import requests
 import time
 from dotenv import load_dotenv
+from typing import Optional, Callable
 from security import SecurityManager
 from monitoring import MonitoringManager
+# Prometheus client (optional)
+generate_latest: Optional[Callable[[], bytes]]
+CONTENT_TYPE_LATEST: str
 try:
-    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+    from prometheus_client import (
+        generate_latest as _generate_latest,
+        CONTENT_TYPE_LATEST as _CONTENT_TYPE_LATEST,
+    )
+    generate_latest = _generate_latest
+    CONTENT_TYPE_LATEST = _CONTENT_TYPE_LATEST
 except ImportError:  # pragma: no cover
-    generate_latest = None  # type: ignore
-    CONTENT_TYPE_LATEST = "text/plain; charset=utf-8"  # type: ignore
+    generate_latest = None
+    CONTENT_TYPE_LATEST = "text/plain; charset=utf-8"
 
 # Load environment variables
 load_dotenv()
@@ -29,6 +38,11 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 300
 # Initialize security and monitoring
 security_manager = SecurityManager()
 monitoring_manager = MonitoringManager()
+
+
+@app.before_request
+def _start_timer():
+    g._start_time = time.time()
 
 
 @app.after_request
@@ -52,15 +66,13 @@ def set_security_headers(response):
             method = request.method
             status = response.status_code
             # Use MonitoringManager's Prometheus metrics if available
-            if getattr(monitoring_manager, "request_counter", None) and getattr(
-                monitoring_manager, "request_latency", None
-            ):
-                monitoring_manager.request_counter.labels(
-                    endpoint=endpoint, method=method, status=str(status)
-                ).inc()
-                monitoring_manager.request_latency.labels(
-                    endpoint=endpoint, method=method, status=str(status)
-                ).observe(duration)
+            rc = getattr(monitoring_manager, "request_counter", None)
+            rl = getattr(monitoring_manager, "request_latency", None)
+            if rc is not None and rl is not None:
+                rc.labels(endpoint=endpoint, method=method, status=str(status)).inc()
+                rl.labels(endpoint=endpoint, method=method, status=str(status)).observe(
+                    duration
+                )
     except Exception:
         pass
 
@@ -356,6 +368,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-@app.before_request
-def _start_timer():
-    g._start_time = time.time()

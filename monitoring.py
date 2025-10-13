@@ -10,15 +10,22 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from collections import defaultdict, deque
 import logging
-try:
-    from prometheus_client import Counter, Histogram
-except ImportError:  # pragma: no cover
-    Counter = None  # type: ignore
-    Histogram = None  # type: ignore
+def _get_prom_client() -> Optional[Any]:
+    """Return prometheus_client module if available, else None."""
+    try:
+        import prometheus_client as prom_mod
+        return prom_mod
+    except ImportError:  # pragma: no cover
+        return None
 
 
 class MonitoringManager:
     """Manages monitoring, logging, and analytics for ScriptAI"""
+
+    # Prometheus metrics (initialized when client is available)
+    request_counter: Optional[Any]
+    request_latency: Optional[Any]
+    error_counter: Optional[Any]
 
     def __init__(
         self, log_file: str = "scriptai.log", max_log_size: int = 10 * 1024 * 1024
@@ -38,6 +45,14 @@ class MonitoringManager:
         # Initialize Prometheus metrics if available
         self._init_prometheus_metrics()
 
+        # Ensure attributes exist for type checkers even if init path changes
+        if not hasattr(self, "request_counter"):
+            self.request_counter = None
+        if not hasattr(self, "request_latency"):
+            self.request_latency = None
+        if not hasattr(self, "error_counter"):
+            self.error_counter = None
+
     def setup_logging(self):
         """Setup logging configuration"""
         logging.basicConfig(
@@ -49,7 +64,8 @@ class MonitoringManager:
 
     def _init_prometheus_metrics(self):
         """Initialize Prometheus counters and histograms if the client is installed."""
-        if Counter is None or Histogram is None:
+        prom = _get_prom_client()
+        if prom is None:
             # Prometheus client not installed; skip initialization
             self.request_counter = None
             self.request_latency = None
@@ -57,21 +73,21 @@ class MonitoringManager:
             return
 
         # Total requests by endpoint/method/status
-        self.request_counter = Counter(
+        self.request_counter = prom.Counter(
             "scriptai_requests_total",
             "Total HTTP requests",
             ["endpoint", "method", "status"],
         )
 
         # Request latency histogram
-        self.request_latency = Histogram(
+        self.request_latency = prom.Histogram(
             "scriptai_request_duration_seconds",
             "HTTP request latency in seconds",
             ["endpoint", "method", "status"],
         )
 
         # Error counter by type
-        self.error_counter = Counter(
+        self.error_counter = prom.Counter(
             "scriptai_errors_total",
             "Total errors",
             ["error_type"],
