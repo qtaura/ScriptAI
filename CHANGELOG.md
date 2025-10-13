@@ -44,13 +44,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - Unreleased
 
 ### Added
- 
+- Prometheus metrics integration: `/metrics` endpoint exposes counters and histograms
+- Request instrumentation: counters, latency histogram, and error counts in `monitoring.py`
+- Minimal API error handling: clean JSON errors for invalid JSON and unknown model
+- Tests for `/metrics` endpoint and API error handling
 
 ### Changed
- 
+- `/metrics` now serves Prometheus text; previous JSON moved to `/metrics-json`
+- Applied Black 23.12.1 formatting to satisfy Python 3.10/3.11 CI
+- Hooked Flask `before_request`/`after_request` to record request timing and labels
+- Updated README to accurately describe monitoring endpoints
 
 ### Fixed
- 
+- Resolved mypy typing errors around Prometheus metrics and Flask hooks on py310
+- Eliminated Black diffs by normalizing import spacing and top-level separation
 
 ### Planned
 - User authentication system
