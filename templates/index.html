@@ -12,7 +12,7 @@
 <body>
     <header class="app-header">
         <div class="brand">
-            <img src="{{ url_for('static', filename='../../assets/images/logo.svg') }}" alt="ScriptAI" class="logo" />
+            <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="ScriptAI" class="logo" />
             <div class="titles">
                 <h1>ScriptAI</h1>
                 <p class="subtitle">AI-Powered Code Generation</p>
@@ -22,11 +22,28 @@
             <a href="/health" target="_blank">Health</a>
             <a href="/metrics-json" target="_blank">Metrics</a>
             <a href="https://github.com/jailk123/ScriptAI" target="_blank">GitHub</a>
+            <button id="theme-toggle" class="btn ghost" aria-label="Toggle theme">🌙</button>
         </nav>
     </header>
 
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h2 class="hero-title">Ship code faster with confidence</h2>
+                <p class="hero-subtitle">Modern, production-grade UI for AI-powered code generation. Beautiful, responsive, and built for teams.</p>
+                <div class="hero-actions">
+                    <a href="https://github.com/jailk123/ScriptAI" target="_blank" class="btn primary">Star on GitHub</a>
+                    <a href="#generator" class="btn">Try the Generator</a>
+                </div>
+            </div>
+            <div class="hero-art">
+                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="ScriptAI Logo" class="hero-logo" />
+            </div>
+        </div>
+    </section>
+
     <main class="container">
-        <section class="card input-card">
+        <section id="generator" class="card input-card">
             <div class="card-header">
                 <h2>Generate Code</h2>
                 <div class="status-badges">
@@ -85,6 +102,7 @@
             <div class="output-actions">
                 <button id="copy-btn" class="btn">Copy</button>
                 <button id="save-btn" class="btn">Download</button>
+                <button class="btn ghost" onclick="window.open('/performance','_blank')">Performance</button>
             </div>
         </section>
 

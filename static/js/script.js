@@ -10,7 +10,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const loading = document.getElementById('loading');
     const errorMessage = document.getElementById('error-message');
     const modelBadge = document.getElementById('model-badge');
-    
+    const themeToggle = document.getElementById('theme-toggle');
+
     // Reflect selected model in header badge
     function updateModelBadge() {
         if (modelBadge && modelSelect) {
@@ -20,6 +21,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     updateModelBadge();
     modelSelect.addEventListener('change', updateModelBadge);
+
+    // Theme toggle (dark/light) with localStorage persistence
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    if (themeToggle) {
+        themeToggle.textContent = savedTheme === 'light' ? '☀️' : '🌙';
+        themeToggle.addEventListener('click', function() {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            themeToggle.textContent = next === 'light' ? '☀️' : '🌙';
+        });
+    }
 
     // Function to detect language from code
     function detectLanguage(code) {
