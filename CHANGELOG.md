@@ -59,6 +59,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resolved mypy typing errors around Prometheus metrics and Flask hooks on py310
 - Eliminated Black diffs by normalizing import spacing and top-level separation
 
+### Documentation
+- Clarified multi-model/modular AI backends status: partially implemented.
+  Modular structure exists, but flexibility isn’t fully demonstrated; only the
+  primary model is tested. README guidance updated to avoid implying full
+  flexibility.
+
 ### Planned
 - User authentication system
 - Cloud-based snippet storage

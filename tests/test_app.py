@@ -89,6 +89,13 @@ class TestApp(unittest.TestCase):
             data = json.loads(response.data)
             self.assertIn("error", data)
 
+    def test_index_lists_local_model(self):
+        """Index should list at least the local model option via adapters."""
+        response = self.app.get("/")
+        self.assertEqual(response.status_code, 200)
+        body = response.data.decode("utf-8", errors="ignore")
+        self.assertIn('<option value="local">', body)
+
 
 if __name__ == "__main__":
     unittest.main()

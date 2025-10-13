@@ -314,7 +314,33 @@ python cli.py "Create a Python function that implements quicksort" --model opena
 
 ### 🔧 **Adding New Models**
 
-To add a new AI model, create a new generator class in `cli.py`:
+To add a new AI model, you can extend either the CLI generators or the web adapters.
+
+#### Web (Flask) Adapters
+
+Adapters live in `model_adapters.py` and follow a simple interface:
+
+```python
+class ModelAdapter:
+    def generate(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
+        raise NotImplementedError
+
+class CustomAdapter(ModelAdapter):
+    def generate(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
+        # Integrate your provider here and return (code, error)
+        return "# your generated code", None
+
+# Register usage: send {"model": "custom"} to /generate
+```
+
+The web app routes requests through adapters based on the `model` field in the
+JSON payload, e.g. `{ "prompt": "...", "model": "local" }`. Currently tested
+adapters include `local`, with `openai` and `huggingface` available when API keys
+are configured.
+
+#### CLI Generators
+
+To add a new AI model for the CLI, create a new generator class in `cli.py`:
 
 ```python
 class CustomModelGenerator(CodeGenerator):
@@ -332,6 +358,14 @@ class CustomModelGenerator(CodeGenerator):
             return self.format_code(response), None
         except Exception as e:
             return None, f"Error with custom model: {str(e)}"
+```
+
+#### Availability & Selection
+
+- The web UI lists available models based on configured API keys via adapters
+  (`openai`, `huggingface`, and always `local`).
+- The CLI supports `--model openai|huggingface|local` and can be extended in a
+  similar fashion.
 ```
 
 ### 🎨 **Customizing the Web Interface**
