@@ -34,6 +34,12 @@ ScriptAI is a sophisticated code generation platform that leverages state-of-the
 - **Code Export**: Save generated code directly to files or copy to clipboard
 - **Customizable Models**: Configure which AI models to use based on your requirements
 
+## What's New in 1.1.0
+- Enhanced local model support with improved runtime behavior and fallbacks
+- Advanced security improvements: stricter headers and safer defaults
+- Performance optimizations across request handling and rendering paths
+- Extended monitoring dashboard with richer metrics and charts
+
 ## How It Works
 
 ScriptAI follows a streamlined pipeline from user input to generated code:

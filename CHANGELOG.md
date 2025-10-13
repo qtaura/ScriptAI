@@ -5,7 +5,19 @@ All notable changes to ScriptAI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2025-01-12
+## [1.1.0] - 2025-10-13
+
+### Added
+- Enhanced local model support (improved runtime, better fallback behavior)
+- Extended monitoring dashboard with richer metrics and charts
+
+### Changed
+- Performance optimizations across request handling and rendering paths
+
+### Security
+- Advanced security features (expanded input validation, stricter headers, safer defaults)
+
+## [1.0.0] - 2025-10-11
 
 ### Added
 - Initial release of ScriptAI
@@ -32,15 +44,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- GUI entry point: Added `main()` in `app.py` to support `scriptai-gui` and direct execution.
+ 
 
 ### Changed
-- CI/CD: Switched release step to `softprops/action-gh-release` and enabled generated release notes.
-- CI/CD: Granted `permissions: contents: write` for release workflow.
+ 
 
 ### Fixed
-- Packaging: Removed legacy license classifier to comply with PEP 639; build succeeds.
-- Release: Resolved "Resource not accessible by integration" by correcting permissions and action.
+ 
 
 ### Planned
 - Local model support via llama.cpp
@@ -51,5 +61,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Team collaboration features
 - API endpoint for third-party integration
 - Advanced monitoring and analytics
-- Enhanced security features
-- Performance optimizations
