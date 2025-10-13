@@ -127,6 +127,7 @@ class CodeGenerator:
         return code.strip()
 
 
+
 class OpenAIGenerator(CodeGenerator):
     """Generate code using OpenAI API"""
 
@@ -178,6 +179,7 @@ class OpenAIGenerator(CodeGenerator):
             )
         except Exception as e:
             return None, f"Error with OpenAI API: {str(e)}"
+
 
 
 class HuggingFaceGenerator(CodeGenerator):
@@ -232,6 +234,7 @@ class HuggingFaceGenerator(CodeGenerator):
             )
         except Exception as e:
             return None, f"Error with HuggingFace API: {str(e)}"
+
 
 
 class LocalModelGenerator(CodeGenerator):
@@ -302,6 +305,7 @@ class LocalModelGenerator(CodeGenerator):
             )
         # Default to python
         return self._generate_stub("python", prompt)
+
 
 
 class ScriptAICLI:
