@@ -12,12 +12,12 @@ from cli import LocalModelGenerator
 
 class TestCLI(unittest.TestCase):
     def test_local_model_generation(self):
-        """Test that the local model placeholder returns an error message"""
+        """Test that the local model generator returns a code stub"""
         generator = LocalModelGenerator()
         code, error = generator.generate("Test prompt")
-        self.assertIsNone(code)
-        self.assertIsNotNone(error)
-        self.assertIn("not implemented", error.lower() if error else "")
+        self.assertIsNotNone(code)
+        self.assertIsNone(error)
+        self.assertTrue(len(code) > 0)
 
     @patch("sys.stdout", new_callable=io.StringIO)
     def test_main_help(self, mock_stdout):

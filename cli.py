@@ -201,8 +201,65 @@ class LocalModelGenerator(CodeGenerator):
     """Generate code using a local model"""
 
     def generate(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
-        # This is a placeholder for future implementation with local models
-        return None, "Local model generation not implemented yet. Coming in Q2 2025."
+        try:
+            prompt_clean = prompt.strip()
+            if not prompt_clean:
+                return None, "Empty prompt"
+
+            # Simple language detection heuristics from prompt keywords
+            lang = self._detect_language(prompt_clean)
+            code = self._generate_stub(lang, prompt_clean)
+            return code, None
+        except Exception as e:
+            return None, f"Local generator error: {str(e)}"
+
+    def _detect_language(self, prompt: str) -> str:
+        p = prompt.lower()
+        if any(k in p for k in ["python", "pandas", "fastapi", "def "]):
+            return "python"
+        if any(k in p for k in ["react", "javascript", "node", "function "]):
+            return "javascript"
+        if any(k in p for k in ["sql", "select", "from", "where"]):
+            return "sql"
+        if any(k in p for k in ["html", "css", "<!doctype", "<html"]):
+            return "html"
+        return "python"
+
+    def _generate_stub(self, lang: str, prompt: str) -> str:
+        if lang == "python":
+            return (
+                "def generated_function(*args, **kwargs):\n"
+                "    \"\"\"\n"
+                f"    Generated locally based on prompt: {prompt}\n"
+                "    Replace this stub with your implementation.\n"
+                "    \"\"\"\n"
+                "    # TODO: implement logic based on requirements above\n"
+                "    return None\n"
+            )
+        if lang == "javascript":
+            return (
+                "// Generated locally based on prompt\n"
+                f"// {prompt}\n"
+                "export function generatedFunction(...args) {\n"
+                "  // TODO: implement logic based on requirements above\n"
+                "  return null;\n"
+                "}\n"
+            )
+        if lang == "sql":
+            return (
+                "-- Generated locally based on prompt\n"
+                f"-- {prompt}\n"
+                "SELECT 1 AS placeholder;\n"
+            )
+        if lang == "html":
+            return (
+                "<!-- Generated locally based on prompt -->\n"
+                f"<!-- {prompt} -->\n"
+                "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Generated</title></head>\n"
+                "<body><div id=\"app\">Replace this stub with your implementation</div></body></html>\n"
+            )
+        # Default to python
+        return self._generate_stub("python", prompt)
 
 
 class ScriptAICLI:

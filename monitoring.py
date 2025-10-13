@@ -197,11 +197,31 @@ class MonitoringManager:
             return {"message": "No performance data available"}
 
         response_times = [m["response_time"] for m in self.performance_metrics]
+        sorted_times = sorted(response_times)
+
+        def percentile(values, p):
+            if not values:
+                return 0.0
+            if p <= 0:
+                return float(values[0])
+            if p >= 100:
+                return float(values[-1])
+            k = (len(values) - 1) * (p / 100.0)
+            f = int(k)
+            c = min(f + 1, len(values) - 1)
+            if f == c:
+                return float(values[int(k)])
+            d0 = values[f] * (c - k)
+            d1 = values[c] * (k - f)
+            return float(d0 + d1)
 
         return {
             "avg_response_time": round(sum(response_times) / len(response_times), 2),
             "min_response_time": round(min(response_times), 2),
             "max_response_time": round(max(response_times), 2),
+            "p50_response_time": round(percentile(sorted_times, 50), 2),
+            "p95_response_time": round(percentile(sorted_times, 95), 2),
+            "p99_response_time": round(percentile(sorted_times, 99), 2),
             "total_requests": len(self.performance_metrics),
             "success_rate": round(
                 sum(1 for m in self.performance_metrics if m["success"])

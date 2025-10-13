@@ -42,7 +42,7 @@ class TestApp(unittest.TestCase):
         self.assertIn("error", data)
 
     def test_local_model_placeholder(self):
-        """Test that the local model placeholder returns some code"""
+        """Test that the local model returns a code stub"""
         response = self.app.post(
             "/generate",
             data=json.dumps({"prompt": "Test prompt", "model": "local"}),
@@ -51,7 +51,7 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertIn("code", data)
-        self.assertIn("placeholder", data["code"].lower())
+        self.assertTrue(len(data["code"]) > 0)
 
 
 if __name__ == "__main__":

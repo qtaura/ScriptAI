@@ -16,9 +16,29 @@ HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 # Initialize Flask app
 app = Flask(__name__)
 
+# Performance-related config
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+app.config['TEMPLATES_AUTO_RELOAD'] = False
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 300
+
 # Initialize security and monitoring
 security_manager = SecurityManager()
 monitoring_manager = MonitoringManager()
+
+
+@app.after_request
+def set_security_headers(response):
+    """Apply security headers to all responses"""
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    # Allow CDN for Prism assets
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' https://cdnjs.cloudflare.com; "
+        "style-src 'self' https://cdnjs.cloudflare.com"
+    )
+    return response
 
 
 @app.route("/")
@@ -87,6 +107,7 @@ def generate_with_huggingface(prompt):
                 "inputs": full_prompt,
                 "parameters": {"max_new_tokens": 500, "return_full_text": False},
             },
+            timeout=30,
         )
 
         if response.status_code == 200:
@@ -108,13 +129,59 @@ def generate_with_huggingface(prompt):
         return None, f"Error with HuggingFace API: {str(e)}"
 
 
+def _detect_language(prompt: str) -> str:
+    p = prompt.lower()
+    if any(k in p for k in ["python", "pandas", "fastapi", "def "]):
+        return "python"
+    if any(k in p for k in ["react", "javascript", "node", "function "]):
+        return "javascript"
+    if any(k in p for k in ["sql", "select", "from", "where"]):
+        return "sql"
+    if any(k in p for k in ["html", "css", "<!doctype", "<html"]):
+        return "html"
+    return "python"
+
+
+def _generate_stub(lang: str, prompt: str) -> str:
+    if lang == "python":
+        return (
+            "def generated_function(*args, **kwargs):\n"
+            "    \"\"\"\n"
+            f"    Generated locally based on prompt: {prompt}\n"
+            "    Replace this stub with your implementation.\n"
+            "    \"\"\"\n"
+            "    # TODO: implement logic based on requirements above\n"
+            "    return None\n"
+        )
+    if lang == "javascript":
+        return (
+            "// Generated locally based on prompt\n"
+            f"// {prompt}\n"
+            "export function generatedFunction(...args) {\n"
+            "  // TODO: implement logic based on requirements above\n"
+            "  return null;\n"
+            "}\n"
+        )
+    if lang == "sql":
+        return (
+            "-- Generated locally based on prompt\n"
+            f"-- {prompt}\n"
+            "SELECT 1 AS placeholder;\n"
+        )
+    if lang == "html":
+        return (
+            "<!-- Generated locally based on prompt -->\n"
+            f"<!-- {prompt} -->\n"
+            "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Generated</title></head>\n"
+            "<body><div id=\"app\">Replace this stub with your implementation</div></body></html>\n"
+        )
+    return _generate_stub("python", prompt)
+
+
 def generate_with_local_model(prompt):
-    """Generate code using a local model (placeholder for future implementation)"""
-    # This is a placeholder for future implementation with local models
-    return (
-        "// This is a placeholder for local model generation.\n// In a real implementation, this would use a local model like llama.cpp\n\n// Example code based on your prompt:\nfunction example() {\n  console.log('Local model generation would go here');\n}",
-        None,
-    )
+    """Generate code using a local model (basic stub implementation)"""
+    lang = _detect_language(prompt)
+    return _generate_stub(lang, prompt), None
 
 
 @app.route("/generate", methods=["POST"])
@@ -211,6 +278,18 @@ def get_performance():
     """Get performance metrics"""
     metrics = monitoring_manager.get_performance_metrics()
     return jsonify(metrics)
+
+
+@app.route("/metrics")
+def get_metrics():
+    """Get combined metrics for dashboard"""
+    return jsonify(
+        {
+            "usage": monitoring_manager.get_usage_stats(hours=24),
+            "performance": monitoring_manager.get_performance_metrics(),
+            "health": monitoring_manager.check_health(),
+        }
+    )
 
 
 @app.route("/security-stats")
