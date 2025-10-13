@@ -180,5 +180,3 @@ def available_models() -> List[Dict[str, Any]]:
         models.append({"id": "huggingface", "name": "HuggingFace StarCoder"})
     models.append({"id": "local", "name": "Local Model (Placeholder)"})
     return models
-
-# EOF
