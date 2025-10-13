@@ -1,4 +1,10 @@
 from flask import Flask, render_template, request, jsonify, Response, g
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+except Exception:  # pragma: no cover
+    Limiter = None
+    get_remote_address = None
 import os
 import requests
 import time
@@ -37,10 +43,27 @@ app = Flask(__name__)
 app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
 app.config["TEMPLATES_AUTO_RELOAD"] = False
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 300
+app.config.setdefault("RATELIMIT_STRICT_TEST", False)
 
 # Initialize security and monitoring
 security_manager = SecurityManager()
 monitoring_manager = MonitoringManager()
+
+# Configure rate limiting (Flask-Limiter) with sane defaults
+if Limiter is not None:
+    def _rate_key_func():
+        # Prefer X-Forwarded-For if present (behind proxies), else remote_addr
+        return request.environ.get("HTTP_X_FORWARDED_FOR", request.remote_addr)
+
+    limiter = Limiter(key_func=_rate_key_func, app=app, default_limits=["100 per hour"])
+else:
+    class _NoopLimiter:
+        def limit(self, *args, **kwargs):
+            def _wrap(f):
+                return f
+            return _wrap
+
+    limiter = _NoopLimiter()
 
 
 @app.before_request
@@ -165,7 +188,22 @@ def _json_error(message: str, status: int):
     return jsonify({"error": message}), status
 
 
+# JSON handler for 429 Too Many Requests
+@app.errorhandler(429)
+def _handle_rate_limit(e):  # pragma: no cover (exercised via tests)
+    try:
+        monitoring_manager.log_error("rate_limit_exceeded", str(e), {"client_ip": request.remote_addr})
+    except Exception:
+        pass
+    return _json_error("Rate limit exceeded. Try again later.", 429)
+
+
+def _generate_limit():
+    # Stricter limit during tests to verify 429 behavior without impacting production
+    return "2 per minute" if app.config.get("RATELIMIT_STRICT_TEST") else "100 per hour"
+
 @app.route("/generate", methods=["POST"])
+@limiter.limit(_generate_limit)
 def generate_code():
     start_time = time.time()
     client_ip = request.environ.get("HTTP_X_FORWARDED_FOR", request.remote_addr)

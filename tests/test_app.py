@@ -12,6 +12,8 @@ from app import app
 class TestApp(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
+        # Ensure strict rate limit test mode is disabled by default
+        app.config["RATELIMIT_STRICT_TEST"] = False
 
     def test_home_page(self):
         """Test that the home page loads correctly"""
@@ -95,6 +97,33 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         body = response.data.decode("utf-8", errors="ignore")
         self.assertIn('<option value="local">', body)
+
+    def test_generate_rate_limit_429(self):
+        """/generate should return 429 after exceeding per-route limit."""
+        # Enable strict test limits and use a unique client IP to avoid collisions
+        app.config["RATELIMIT_STRICT_TEST"] = True
+        headers = {"X-Forwarded-For": "203.0.113.55"}
+
+        # First two requests should pass under "2 per minute"
+        for i in range(2):
+            r = self.app.post(
+                "/generate",
+                data=json.dumps({"prompt": "x", "model": "local"}),
+                content_type="application/json",
+                headers=headers,
+            )
+            self.assertNotEqual(r.status_code, 429)
+
+        # Third request should hit the limit and return 429
+        r = self.app.post(
+            "/generate",
+            data=json.dumps({"prompt": "x", "model": "local"}),
+            content_type="application/json",
+            headers=headers,
+        )
+        self.assertEqual(r.status_code, 429)
+        body = json.loads(r.data)
+        self.assertIn("error", body)
 
 
 if __name__ == "__main__":
