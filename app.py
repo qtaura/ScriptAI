@@ -70,6 +70,7 @@ def generate_with_openai(prompt):
     openai.api_key = OPENAI_API_KEY
 
     try:
+        # fmt: off
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -86,6 +87,7 @@ def generate_with_openai(prompt):
             max_tokens=1500,
             temperature=0.7,
         )
+        # fmt: on
 
         return response.choices[0].message.content, None
     except Exception as e:

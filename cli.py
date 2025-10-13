@@ -156,6 +156,7 @@ class OpenAIGenerator(CodeGenerator):
                 "one for the task."
             )
 
+            # fmt: off
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
@@ -165,6 +166,7 @@ class OpenAIGenerator(CodeGenerator):
                 max_tokens=self.max_tokens,
                 temperature=self.temperature,
             )
+            # fmt: on
 
             code = response.choices[0].message.content
             return self.format_code(code), None
