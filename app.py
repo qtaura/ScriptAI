@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, Response, g
 from typing import Any, TYPE_CHECKING
+
 if TYPE_CHECKING:  # for type hints only; avoids runtime import issues
     from flask_limiter import Limiter as LimiterType
 import os
@@ -50,21 +51,25 @@ monitoring_manager = MonitoringManager()
 limiter: Any
 try:
     from flask_limiter import Limiter
+
     _has_limiter = True
 except Exception:  # pragma: no cover
     _has_limiter = False
 
 if _has_limiter:
+
     def _rate_key_func():
         # Prefer X-Forwarded-For if present (behind proxies), else remote_addr
         return request.environ.get("HTTP_X_FORWARDED_FOR", request.remote_addr)
 
     limiter = Limiter(key_func=_rate_key_func, app=app, default_limits=["100 per hour"])
 else:
+
     class _NoopLimiter:
         def limit(self, *args, **kwargs):
             def _wrap(f):
                 return f
+
             return _wrap
 
     limiter = _NoopLimiter()
@@ -196,7 +201,9 @@ def _json_error(message: str, status: int):
 @app.errorhandler(429)
 def _handle_rate_limit(e):  # pragma: no cover (exercised via tests)
     try:
-        monitoring_manager.log_error("rate_limit_exceeded", str(e), {"client_ip": request.remote_addr})
+        monitoring_manager.log_error(
+            "rate_limit_exceeded", str(e), {"client_ip": request.remote_addr}
+        )
     except Exception:
         pass
     return _json_error("Rate limit exceeded. Try again later.", 429)
@@ -205,6 +212,7 @@ def _handle_rate_limit(e):  # pragma: no cover (exercised via tests)
 def _generate_limit():
     # Stricter limit during tests to verify 429 behavior without impacting production
     return "2 per minute" if app.config.get("RATELIMIT_STRICT_TEST") else "100 per hour"
+
 
 @app.route("/generate", methods=["POST"])
 @limiter.limit(_generate_limit)
