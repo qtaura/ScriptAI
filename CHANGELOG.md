@@ -5,6 +5,18 @@ All notable changes to ScriptAI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - Unreleased
+
+### Planned
+- User authentication and role-based access controls
+- Cloud-based snippet storage with versioning
+- Team collaboration features (shared projects, permissions)
+- Public API and API keys for third-party integration
+- Advanced analytics and reporting dashboards
+- Plugin system for custom model adapters
+- Redis-backed Flask-Limiter for distributed rate limiting
+- CLI rate limiting and improved offline mode documentation
+
 ## [1.1.0] - 2025-10-13
 
 ### Added
@@ -61,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Resolved mypy typing errors around Prometheus metrics and Flask hooks on py310
 - Eliminated Black diffs by normalizing import spacing and top-level separation
+ - Resolved mypy typing errors around Flask-Limiter optional import on py311
 
 ### Documentation
 - Clarified multi-model/modular AI backends status: partially implemented.
@@ -70,11 +83,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Polished README: added Quickstart section, clarified adapter selection and
    testing coverage, and updated Python requirement to 3.9+
  - Documented anti-abuse measures: Flask-Limiter defaults, JSON 429 handler, and CLI notes
-
-### Planned
-- User authentication system
-- Cloud-based snippet storage
-- Team collaboration features
-- API endpoint for third-party integration
-- Advanced analytics and reporting
-- Plugin system for custom models
