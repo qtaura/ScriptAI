@@ -56,14 +56,38 @@ HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 # Example prompts for different programming tasks
 EXAMPLE_PROMPTS = {
-    "Python Data Processing": "Create a Python function that reads a CSV file, filters rows where the 'age' column is greater than 30, and writes the result to a new CSV file.",
-    "JavaScript Frontend": "Write a React component that displays a paginated list of items fetched from an API endpoint.",
-    "SQL Database": "Create a SQL query that joins three tables (users, orders, products) and returns the total amount spent by each user on each product category.",
-    "API Development": "Create a FastAPI endpoint that accepts user registration data, validates it, and stores it in a database.",
-    "Algorithm Implementation": "Implement a depth-first search algorithm in Python for traversing a graph represented as an adjacency list.",
-    "Testing": "Write a pytest test suite for a function that validates email addresses.",
-    "DevOps": "Create a Docker Compose file for a web application with a Node.js backend, React frontend, and MongoDB database.",
-    "Data Science": "Write a Python function using pandas and matplotlib to create a visualization of time series data with moving averages.",
+    "Python Data Processing": (
+        "Create a Python function that reads a CSV file, "
+        "filters rows where the 'age' column is greater than 30, "
+        "and writes the result to a new CSV file."
+    ),
+    "JavaScript Frontend": (
+        "Write a React component that displays a paginated list of items "
+        "fetched from an API endpoint."
+    ),
+    "SQL Database": (
+        "Create a SQL query that joins three tables (users, orders, products) "
+        "and returns the total amount spent by each user on each product category."
+    ),
+    "API Development": (
+        "Create a FastAPI endpoint that accepts user registration data, "
+        "validates it, and stores it in a database."
+    ),
+    "Algorithm Implementation": (
+        "Implement a depth-first search algorithm in Python for traversing a graph "
+        "represented as an adjacency list."
+    ),
+    "Testing": (
+        "Write a pytest test suite for a function that validates email addresses."
+    ),
+    "DevOps": (
+        "Create a Docker Compose file for a web application with a Node.js backend, "
+        "React frontend, and MongoDB database."
+    ),
+    "Data Science": (
+        "Write a Python function using pandas and matplotlib to create a visualization "
+        "of time series data with moving averages."
+    ),
 }
 
 
