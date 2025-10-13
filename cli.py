@@ -137,16 +137,23 @@ class OpenAIGenerator(CodeGenerator):
             if not OPENAI_API_KEY:
                 return (
                     None,
-                    "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.",
+                    (
+                        "OpenAI API key not found. "
+                        "Please set the OPENAI_API_KEY environment variable."
+                    ),
                 )
 
             openai.api_key = OPENAI_API_KEY
 
             system_prompt = (
-                "You are an expert programmer that generates clean, efficient, and well-documented code. "
-                "Focus on providing only the code implementation with minimal explanation. "
-                "Include helpful comments within the code to explain complex parts. "
-                "If the language isn't specified, choose the most appropriate one for the task."
+                "You are an expert programmer that generates clean, efficient, "
+                "and well-documented code. "
+                "Focus on providing only the code implementation "
+                "with minimal explanation. "
+                "Include helpful comments within the code "
+                "to explain complex parts. "
+                "If the language isn't specified, choose the most appropriate "
+                "one for the task."
             )
 
             response = openai.ChatCompletion.create(
@@ -181,7 +188,10 @@ class HuggingFaceGenerator(CodeGenerator):
             if not HUGGINGFACE_API_KEY:
                 return (
                     None,
-                    "HuggingFace API key not found. Please set the HUGGINGFACE_API_KEY environment variable.",
+                    (
+                        "HuggingFace API key not found. "
+                        "Please set the HUGGINGFACE_API_KEY environment variable."
+                    ),
                 )
 
             API_URL = "https://api-inference.huggingface.co/models/bigcode/starcoder"
@@ -280,8 +290,13 @@ class LocalModelGenerator(CodeGenerator):
             return (
                 "<!-- Generated locally based on prompt -->\n"
                 f"<!-- {prompt} -->\n"
-                "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Generated</title></head>\n"
-                "<body><div id=\"app\">Replace this stub with your implementation</div></body></html>\n"
+                "<!DOCTYPE html><html><head>"
+                "<meta charset=\"utf-8\">"
+                "<title>Generated</title>"
+                "</head>\n"
+                "<body>"
+                "<div id=\"app\">Replace this stub with your implementation</div>"
+                "</body></html>\n"
             )
         # Default to python
         return self._generate_stub("python", prompt)

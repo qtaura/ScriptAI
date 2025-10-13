@@ -61,7 +61,10 @@ def generate_with_openai(prompt):
     if not OPENAI_API_KEY:
         return (
             None,
-            "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.",
+            (
+                "OpenAI API key not found. "
+                "Please set the OPENAI_API_KEY environment variable."
+            ),
         )
 
     openai.api_key = OPENAI_API_KEY
@@ -73,8 +76,9 @@ def generate_with_openai(prompt):
             {
                 "role": "system",
                 "content": (
-                    "You are a helpful assistant that generates code based on user requirements. "
-                    "Provide only the code with minimal explanation."
+                    "You are a helpful assistant that generates code based on "
+                    "user requirements. Provide only the code with minimal "
+                    "explanation."
                 ),
             },
                 {"role": "user", "content": prompt},
@@ -93,7 +97,10 @@ def generate_with_huggingface(prompt):
     if not HUGGINGFACE_API_KEY:
         return (
             None,
-            "HuggingFace API key not found. Please set the HUGGINGFACE_API_KEY environment variable.",
+            (
+                "HuggingFace API key not found. "
+                "Please set the HUGGINGFACE_API_KEY environment variable."
+            ),
         )
 
     API_URL = "https://api-inference.huggingface.co/models/bigcode/starcoder"
@@ -175,8 +182,13 @@ def _generate_stub(lang: str, prompt: str) -> str:
         return (
             "<!-- Generated locally based on prompt -->\n"
             f"<!-- {prompt} -->\n"
-            "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Generated</title></head>\n"
-            "<body><div id=\"app\">Replace this stub with your implementation</div></body></html>\n"
+            "<!DOCTYPE html><html><head>"
+            "<meta charset=\"utf-8\">"
+            "<title>Generated</title>"
+            "</head>\n"
+            "<body>"
+            "<div id=\"app\">Replace this stub with your implementation</div>"
+            "</body></html>\n"
         )
     return _generate_stub("python", prompt)
 
