@@ -156,17 +156,17 @@ class OpenAIGenerator(CodeGenerator):
                 "one for the task."
             )
 
-            # fmt: off
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ]
+
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt},
-                ],
+                messages=messages,
                 max_tokens=self.max_tokens,
                 temperature=self.temperature,
             )
-            # fmt: on
 
             code = response.choices[0].message.content
             return self.format_code(code), None
