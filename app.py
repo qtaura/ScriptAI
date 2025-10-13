@@ -41,6 +41,7 @@ def set_security_headers(response):
     return response
 
 
+
 @app.route("/")
 def index():
     # Pass available models to the template
@@ -276,11 +277,13 @@ def generate_code():
         return jsonify({"error": "An unexpected error occurred"}), 500
 
 
+
 @app.route("/health")
 def health_check():
     """Health check endpoint"""
     health_status = monitoring_manager.check_health()
     return jsonify(health_status)
+
 
 
 @app.route("/stats")
@@ -290,11 +293,13 @@ def get_stats():
     return jsonify(stats)
 
 
+
 @app.route("/performance")
 def get_performance():
     """Get performance metrics"""
     metrics = monitoring_manager.get_performance_metrics()
     return jsonify(metrics)
+
 
 
 @app.route("/metrics")
@@ -309,11 +314,13 @@ def get_metrics():
     )
 
 
+
 @app.route("/security-stats")
 def get_security_stats():
     """Get security statistics"""
     stats = security_manager.get_security_stats()
     return jsonify(stats)
+
 
 
 def main():
