@@ -31,6 +31,7 @@ try:
 except ImportError:
     # readline is not available on Windows
     pass
+
 import platform
 import textwrap
 from datetime import datetime
