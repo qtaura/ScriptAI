@@ -17,9 +17,9 @@ HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 app = Flask(__name__)
 
 # Performance-related config
-app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
-app.config['TEMPLATES_AUTO_RELOAD'] = False
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 300
+app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+app.config["TEMPLATES_AUTO_RELOAD"] = False
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 300
 
 # Initialize security and monitoring
 security_manager = SecurityManager()
