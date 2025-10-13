@@ -476,19 +476,16 @@ python -m unittest discover tests -v
 - CI/CD pipeline
 - Community contribution guidelines
 
-### 🔄 In Progress (v1.1.0)
-- Enhanced local model support
-- Advanced security features
-- Performance optimizations
-- Extended monitoring dashboard
-
-### 📅 Planned (v1.2.0+)
+### 🔄 In Progress (v1.2.0)
 - User authentication system
 - Cloud-based snippet storage
 - Team collaboration features
 - API endpoint for third-party integration
 - Advanced analytics and reporting
 - Plugin system for custom models
+
+### 📅 Planned (v1.3.0+)
+- To be announced
 
 ## License
 

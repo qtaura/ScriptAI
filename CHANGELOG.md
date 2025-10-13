@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Installation and usage guides
 - Customization instructions
 
-## [Unreleased]
+## [1.2.0] - Unreleased
 
 ### Added
  
@@ -53,11 +53,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  
 
 ### Planned
-- Local model support via llama.cpp
-- Language-specific code templates
-- Code optimization suggestions
 - User authentication system
 - Cloud-based snippet storage
 - Team collaboration features
 - API endpoint for third-party integration
-- Advanced monitoring and analytics
+- Advanced analytics and reporting
+- Plugin system for custom models
