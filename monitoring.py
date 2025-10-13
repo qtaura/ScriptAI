@@ -10,10 +10,13 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from collections import defaultdict, deque
 import logging
+
+
 def _get_prom_client() -> Optional[Any]:
     """Return prometheus_client module if available, else None."""
     try:
         import prometheus_client as prom_mod
+
         return prom_mod
     except ImportError:  # pragma: no cover
         return None
@@ -154,8 +157,12 @@ class MonitoringManager:
             if self.request_counter and self.request_latency:
                 status_label = "success" if success else "error"
                 # Use model as endpoint label when route context is not available
-                self.request_counter.labels(endpoint=model, method="POST", status=status_label).inc()
-                self.request_latency.labels(endpoint=model, method="POST", status=status_label).observe(response_time)
+                self.request_counter.labels(
+                    endpoint=model, method="POST", status=status_label
+                ).inc()
+                self.request_latency.labels(
+                    endpoint=model, method="POST", status=status_label
+                ).observe(response_time)
         except Exception:
             # Never let metrics raise
             pass

@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from typing import Optional, Callable
 from security import SecurityManager
 from monitoring import MonitoringManager
+
 # Prometheus client (optional)
 generate_latest: Optional[Callable[[], bytes]]
 CONTENT_TYPE_LATEST: str
@@ -14,6 +15,7 @@ try:
         generate_latest as _generate_latest,
         CONTENT_TYPE_LATEST as _CONTENT_TYPE_LATEST,
     )
+
     generate_latest = _generate_latest
     CONTENT_TYPE_LATEST = _CONTENT_TYPE_LATEST
 except ImportError:  # pragma: no cover
@@ -341,6 +343,7 @@ def prometheus_metrics():
     if generate_latest is None:
         return jsonify({"error": "Prometheus client not installed"}), 500
     return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+
 
 @app.route("/metrics-json")
 def get_metrics_json():
