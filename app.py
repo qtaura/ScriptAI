@@ -73,14 +73,14 @@ def generate_with_openai(prompt):
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are a helpful assistant that generates code based on "
-                    "user requirements. Provide only the code with minimal "
-                    "explanation."
-                ),
-            },
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful assistant that generates code based on "
+                        "user requirements. Provide only the code with minimal "
+                        "explanation."
+                    ),
+                },
                 {"role": "user", "content": prompt},
             ],
             max_tokens=1500,

@@ -520,7 +520,8 @@ Any other input will be treated as a prompt for code generation.
             print(f"Error: {error}")
             if "API key not found" in error:
                 print(
-                    f"To set up your API key, create a .env file with {self.current_model.upper()}_API_KEY=your_key_here"
+                    "To set up your API key, create a .env file with "
+                    f"{self.current_model.upper()}_API_KEY=your_key_here"
                 )
             return False
 
