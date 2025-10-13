@@ -150,9 +150,7 @@ jobs:
         name: Release v${{ github.run_number }}
         body: |
           Automated release from CI/CD pipeline
-          
-          Changes in this release:
-          - See CHANGELOG.md for details
+        generate_release_notes: true
         draft: false
         prerelease: false
         files: |
