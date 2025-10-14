@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     modelSelect.addEventListener('change', updateModelBadge);
 
     // Theme toggle (dark/light) with localStorage persistence
-    const savedTheme = localStorage.getItem('theme') || 'dark';
+    const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
     if (themeToggle) {
         themeToggle.textContent = savedTheme === 'light' ? '☀️' : '🌙';
