@@ -37,6 +37,7 @@ import textwrap
 from datetime import datetime
 from typing import Tuple, List, Optional, Dict, Any
 from dotenv import load_dotenv
+from security import SecurityManager
 
 # Load environment variables
 load_dotenv()
@@ -313,6 +314,13 @@ class ScriptAICLI:
         self.config = self._load_config()
         self._setup_directories()
 
+        # Validate environment on startup (API keys and config paths)
+        try:
+            self._validate_environment_on_startup()
+        except Exception as _e:
+            # Never fail startup due to validation; show a friendly note
+            print(f"Warning: environment validation skipped due to: {str(_e)}")
+
         # Set default model based on available API keys
         if OPENAI_API_KEY:
             self.current_model = "openai"
@@ -356,6 +364,71 @@ class ScriptAICLI:
                 os.makedirs(CONFIG_DIR)
             except OSError as e:
                 print(f"Warning: Could not create config directory: {e}")
+
+    def _validate_environment_on_startup(self) -> None:
+        """Validate environment configuration and ensure required paths exist.
+
+        - Checks API keys for OpenAI and HuggingFace (format hints only)
+        - Ensures config and history files exist (creates minimal defaults)
+        """
+        print("\n[Environment Check]")
+
+        sm = SecurityManager()
+
+        def _key_status(name: str, key: Optional[str]) -> str:
+            if not key:
+                return "missing"
+            return "ok" if sm.validate_api_key(key) else "looks invalid"
+
+        # Report API key status (non-fatal)
+        print(f"- OPENAI_API_KEY: {_key_status('OPENAI_API_KEY', OPENAI_API_KEY)}")
+        print(
+            f"- HUGGINGFACE_API_KEY: {_key_status('HUGGINGFACE_API_KEY', HUGGINGFACE_API_KEY)}"
+        )
+
+        # Ensure config directory exists
+        if not os.path.exists(CONFIG_DIR):
+            try:
+                os.makedirs(CONFIG_DIR)
+                print(f"- Created config directory: {CONFIG_DIR}")
+            except OSError as e:
+                print(f"- Warning: Could not create config directory: {e}")
+
+        # Create minimal defaults for config and history if missing
+        default_config = {
+            "openai": {
+                "temperature": DEFAULT_TEMPERATURE,
+                "max_tokens": DEFAULT_MAX_TOKENS,
+            },
+            "huggingface": {
+                "temperature": DEFAULT_TEMPERATURE,
+                "max_tokens": DEFAULT_MAX_TOKENS,
+            },
+            "local": {
+                "temperature": DEFAULT_TEMPERATURE,
+                "max_tokens": DEFAULT_MAX_TOKENS,
+            },
+        }
+
+        if not os.path.exists(CONFIG_FILE):
+            try:
+                with open(CONFIG_FILE, "w") as f:
+                    json.dump(default_config, f, indent=2)
+                print(f"- Initialized config file: {CONFIG_FILE}")
+            except OSError as e:
+                print(f"- Warning: Could not initialize config file: {e}")
+        else:
+            print(f"- Config file ready: {CONFIG_FILE}")
+
+        if not os.path.exists(HISTORY_FILE):
+            try:
+                with open(HISTORY_FILE, "w") as f:
+                    json.dump([], f)
+                print(f"- Initialized history file: {HISTORY_FILE}")
+            except OSError as e:
+                print(f"- Warning: Could not initialize history file: {e}")
+        else:
+            print(f"- History file ready: {HISTORY_FILE}")
 
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from file"""

@@ -56,6 +56,52 @@ app.config.setdefault("RATELIMIT_STRICT_TEST", False)
 security_manager = SecurityManager()
 monitoring_manager = MonitoringManager()
 
+# Validate environment on startup (non-fatal, logs only)
+def _validate_environment_on_startup() -> None:
+    try:
+        logger = getattr(monitoring_manager, "logger", None)
+        if logger is None:
+            return
+
+        def _key_status(name: str, key: Optional[str]) -> str:
+            if not key:
+                return "missing"
+            return "ok" if security_manager.validate_api_key(key) else "looks invalid"
+
+        # API keys
+        logger.info(
+            "env_check",
+            extra={
+                "message": "Environment validation",
+                "openai_api_key": _key_status("OPENAI_API_KEY", OPENAI_API_KEY),
+                "huggingface_api_key": _key_status(
+                    "HUGGINGFACE_API_KEY", HUGGINGFACE_API_KEY
+                ),
+            },
+        )
+
+        # SPA assets path
+        spa_index = os.path.join("static", "figmalol", "index.html")
+        if os.path.exists(spa_index):
+            logger.info(
+                "env_check_spa",
+                extra={"message": "SPA assets ready", "path": spa_index},
+            )
+        else:
+            logger.warning(
+                "env_check_spa_missing",
+                extra={
+                    "message": "SPA assets missing; ensure static/figmalol is built",
+                    "path": spa_index,
+                },
+            )
+    except Exception:
+        # Never fail app startup due to validation/logging issues
+        pass
+
+# Run validation immediately
+_validate_environment_on_startup()
+
 # Configure rate limiting (Flask-Limiter) with sane defaults
 limiter: Any
 try:
