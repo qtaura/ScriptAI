@@ -301,6 +301,12 @@ Create `config.json` for advanced settings:
 - Default `100/hour` per IP; stricter test limits on `/generate`
 - 429 responses: `{ "error": "Rate limit exceeded. Try again later." }`
 
+### Request Signatures
+- Optional HMAC verification using `REQUEST_SIGNATURE_SECRET` (or `SIGNING_SECRET`).
+- Headers: `X-Signature: v1=<hex>` and `X-Signature-Timestamp: <epoch_seconds>`.
+- Base string: `v1:{timestamp}:{body}`; digest: HMAC SHA256 hex.
+- If no secret is configured, verification is skipped unless explicitly required by the caller.
+
 ### Security Endpoints
 - `GET /health` — System health check
 - `GET /security-stats` — Security statistics
