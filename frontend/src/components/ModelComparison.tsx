@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Check } from "lucide-react";
 import { getIcon } from "../config/iconMap";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 type ModelCardConfig = {
   id?: string;
@@ -19,6 +20,7 @@ type ModelCardConfig = {
 
 export function ModelComparison() {
   const [models, setModels] = useState<ModelCardConfig[]>([]);
+  const [configError, setConfigError] = useState<string>("");
 
   useEffect(() => {
     // Load config from public/modelCards.json; fallback to built-in defaults
@@ -26,13 +28,31 @@ export function ModelComparison() {
       .then((r) => r.json())
       .then((data: { models?: ModelCardConfig[] }) => {
         const items = (data && data.models) || [];
-        if (items.length > 0) {
-          setModels(items);
+        if (items.length === 0) {
+          setConfigError("No model cards found in configuration. Showing defaults.");
+          setModels(defaultModels);
           return;
         }
-        setModels(defaultModels);
+        const valid = items.filter(
+          (m) =>
+            m && typeof m.name === "string" && m.name && typeof m.badge === "string" && m.badge &&
+            typeof m.speed === "string" && typeof m.quality === "string" && typeof m.cost === "string" &&
+            Array.isArray(m.features),
+        );
+        if (valid.length < items.length) {
+          setConfigError("Some model entries in configuration are invalid. Rendering available items.");
+        }
+        if (valid.length === 0) {
+          setConfigError("Failed to parse model cards configuration. Showing defaults.");
+          setModels(defaultModels);
+          return;
+        }
+        setModels(valid);
       })
-      .catch(() => setModels(defaultModels));
+      .catch(() => {
+        setConfigError("Unable to load model cards configuration. Showing defaults.");
+        setModels(defaultModels);
+      });
   }, []);
 
   const defaultModels: ModelCardConfig[] = [
@@ -100,6 +120,14 @@ export function ModelComparison() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
+          {configError && (
+            <div className="md:col-span-3">
+              <Alert variant="destructive">
+                <AlertTitle>Model Cards Error</AlertTitle>
+                <AlertDescription>{configError}</AlertDescription>
+              </Alert>
+            </div>
+          )}
           {models.map((model, index) => {
             const Icon = getIcon(model.icon);
             return (

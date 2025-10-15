@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Textarea } from "./ui/textarea";
 import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -31,19 +32,36 @@ export function CodeGenerator() {
   const [generatedCode, setGeneratedCode] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isModelOpen, setIsModelOpen] = useState(false);
+  const [modelError, setModelError] = useState<string>("");
 
   useEffect(() => {
     // Load available models from backend; default to first or fallback to local
     fetch("/models")
       .then((r) => r.json())
       .then((ms: { id: string; name: string }[]) => {
-        setModels(ms);
-        const defaultModel = ms.find((m) => m.id === "local") || ms[0];
+        const valid = Array.isArray(ms)
+          ? ms.filter(
+              (m) =>
+                m && typeof m.id === "string" && m.id && typeof m.name === "string" && m.name,
+            )
+          : [];
+        if (valid.length < (Array.isArray(ms) ? ms.length : 0)) {
+          setModelError("Some models from server are invalid. Showing available models.");
+        }
+        if (valid.length === 0) {
+          setModels([{ id: "local", name: "Local Model (Placeholder)" }]);
+          setModel("local");
+          setModelError("Failed to load valid models from server. Using placeholder.");
+          return;
+        }
+        setModels(valid);
+        const defaultModel = valid.find((m) => m.id === "local") || valid[0];
         if (defaultModel) setModel(defaultModel.id);
       })
       .catch(() => {
         setModels([{ id: "local", name: "Local Model (Placeholder)" }]);
         setModel("local");
+        setModelError("Unable to fetch models from server. Using placeholder.");
       });
   }, []);
 
@@ -174,6 +192,14 @@ ORDER BY u.username, p.category;`,
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {modelError && (
+                  <Alert variant="destructive">
+                    <AlertTitle>Model Load Error</AlertTitle>
+                    <AlertDescription>
+                      {modelError}
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <div className="space-y-2">
                   <label className="text-sm">Prompt</label>
                   <Textarea
@@ -301,7 +327,10 @@ ORDER BY u.username, p.category;`,
               </CardHeader>
               <CardContent>
                 {errorMessage && (
-                  <div className="mb-3 text-sm text-red-600">{errorMessage}</div>
+                  <Alert variant="destructive" className="mb-3">
+                    <AlertTitle>Generation Error</AlertTitle>
+                    <AlertDescription>{errorMessage}</AlertDescription>
+                  </Alert>
                 )}
                 <Tabs defaultValue="code" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
