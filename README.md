@@ -53,6 +53,22 @@ ScriptAI turns natural language requirements into production-ready code. It ship
 - Rate limiting via Flask-Limiter and strict JSON error handling.
 - Comprehensive tests and CI for reliability.
 
+## Dynamic Model Registry
+
+The UI model list is driven by a single JSON config and filtered by backend availability:
+
+- Edit `frontend/public/modelCards.json` to add or update models. Use adapter IDs: `openai`, `huggingface`, `local`.
+- The UI loads this config and intersects it with the server `GET /models` endpoint. The server lists models based on environment configuration.
+- If there’s no intersection, the UI falls back to the server’s list; if neither is available, a local placeholder is shown.
+
+Backend availability is controlled via environment variables:
+
+- `OPENAI_API_KEY` enables the `openai` adapter.
+- `HUGGINGFACE_API_KEY` enables the `huggingface` adapter.
+- `local` is always available as a placeholder.
+
+This approach keeps one source of truth for display names and metadata while ensuring only configured providers are selectable.
+
 ## Architecture
 
 ```

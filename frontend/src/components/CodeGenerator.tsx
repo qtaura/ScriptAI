@@ -35,33 +35,57 @@ export function CodeGenerator() {
   const [modelError, setModelError] = useState<string>("");
 
   useEffect(() => {
-    // Load available models from backend; default to first or fallback to local
-    fetch("/models")
+    // Dynamic Model Registry: prefer single JSON config and filter by server availability
+    const loadConfig = fetch("/modelCards.json")
+      .then((r) => r.json())
+      .then((data: { models?: { id?: string; name?: string }[] }) => {
+        const items = Array.isArray(data?.models) ? data.models : [];
+        const mapped = items
+          .map((m) => ({ id: String(m.id || ""), name: String(m.name || "") }))
+          .filter((m) => m.id && m.name);
+        return mapped;
+      })
+      .catch(() => []);
+
+    const loadAvailable = fetch("/models")
       .then((r) => r.json())
       .then((ms: { id: string; name: string }[]) => {
         const valid = Array.isArray(ms)
-          ? ms.filter(
-              (m) =>
-                m && typeof m.id === "string" && m.id && typeof m.name === "string" && m.name,
-            )
+          ? ms.filter((m) => m && typeof m.id === "string" && m.id)
           : [];
-        if (valid.length < (Array.isArray(ms) ? ms.length : 0)) {
-          setModelError("Some models from server are invalid. Showing available models.");
+        return valid.map((m) => m.id);
+      })
+      .catch(() => []);
+
+    Promise.all([loadConfig, loadAvailable])
+      .then(([configModels, availableIds]) => {
+        let finalModels = configModels;
+        if (availableIds.length > 0) {
+          // Intersect config with server-available models to avoid unknown model errors
+          finalModels = configModels.filter((m) => availableIds.includes(m.id));
+          // If intersection is empty, fall back to server list names
+          if (finalModels.length === 0) {
+            finalModels = availableIds.map((id) => ({ id, name: id }));
+            setModelError(
+              "No matching models between config and server availability. Using server list.",
+            );
+          }
         }
-        if (valid.length === 0) {
-          setModels([{ id: "local", name: "Local Model (Placeholder)" }]);
-          setModel("local");
-          setModelError("Failed to load valid models from server. Using placeholder.");
-          return;
+        if (finalModels.length === 0) {
+          // Fallback to local placeholder
+          finalModels = [{ id: "local", name: "Local Model (Placeholder)" }];
+          setModelError(
+            "Failed to load models from config and server. Using placeholder.",
+          );
         }
-        setModels(valid);
-        const defaultModel = valid.find((m) => m.id === "local") || valid[0];
+        setModels(finalModels);
+        const defaultModel = finalModels.find((m) => m.id === "local") || finalModels[0];
         if (defaultModel) setModel(defaultModel.id);
       })
       .catch(() => {
         setModels([{ id: "local", name: "Local Model (Placeholder)" }]);
         setModel("local");
-        setModelError("Unable to fetch models from server. Using placeholder.");
+        setModelError("Unexpected error loading model registry. Using placeholder.");
       });
   }, []);
 
