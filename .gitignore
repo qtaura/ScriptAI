@@ -38,3 +38,12 @@ wheels/
 # Logs
 logs/
 *.log
+
+# Local caches and generated stats
+.mypy_cache/
+.pytest_cache/
+scriptai_stats.json
+
+# Local scratch/backup (not required for app)
+sistant
+static/figmalol_vite_backup/
