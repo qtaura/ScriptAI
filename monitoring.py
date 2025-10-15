@@ -182,7 +182,9 @@ class MonitoringManager:
                                 handlers.pop("file", None)
                                 # Remove file from root handlers list
                                 root_handlers = root_cfg.setdefault("handlers", [])
-                                root_cfg["handlers"] = [h for h in root_handlers if h != "file"]
+                                root_cfg["handlers"] = [
+                                    h for h in root_handlers if h != "file"
+                                ]
 
                         # Ensure console exists
                         if "console" in handlers:
@@ -196,7 +198,11 @@ class MonitoringManager:
                                     lc["level"] = level_name
                                     # Also remove file handler from individual loggers when disabled
                                     if not log_to_file and "handlers" in lc:
-                                        lc["handlers"] = [h for h in lc.get("handlers", []) if h != "file"]
+                                        lc["handlers"] = [
+                                            h
+                                            for h in lc.get("handlers", [])
+                                            if h != "file"
+                                        ]
                             except Exception:
                                 # Ignore malformed logger config
                                 pass
