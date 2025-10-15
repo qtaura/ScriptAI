@@ -74,7 +74,7 @@ export function ModelComparison() {
       bgColor: "bg-green-600/10",
     },
     {
-      id: "starcoder",
+      id: "huggingface",
       name: "HuggingFace StarCoder",
       badge: "Open Source",
       speed: "Medium",
