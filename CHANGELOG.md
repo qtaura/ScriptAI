@@ -5,7 +5,7 @@ All notable changes to ScriptAI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] - Unreleased
+## [Unreleased]
 
 ### Planned
 - User authentication and role-based access controls
@@ -16,6 +16,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plugin system for custom model adapters
 - Redis-backed Flask-Limiter for distributed rate limiting
 - CLI rate limiting and improved offline mode documentation
+
+## [1.3.0] - 2025-10-15
+
+### Added
+- React SPA becomes the primary GUI, now served at `/`.
+- Light/Dark theme tokens defined in `frontend/src/index.css` (shadcn-style), enabling robust theming across components.
+- Early theme application script in SPA to respect persisted choice or system preference before paint.
+- Root asset routes (`/assets/<path>` and `/vite.svg`) to support SPA assets resolving correctly from `/`.
+
+### Changed
+- Flask root route switched from `templates/index.html` (Jinja) to `static/figmalol/index.html` (SPA).
+- Frontend build artifacts updated under `static/figmalol/assets/` after rebuild.
+- `frontend/src/components/CodeGenerator.tsx`: add dynamic bottom padding while the model Select is open to avoid overlaying content.
+
+### Fixed
+- Dark mode toggle is now functional across the app via CSS tokens; `.dark` class correctly drives theme.
+- Model Select dropdown no longer overlaps example prompts thanks to responsive spacing.
+
+### Tests
+- `tests/test_app.py`: update `test_home_page` to assert SPA mount point (`id="root"`).
+- Replace template-based model check with `/models` API validation in `test_models_endpoint_lists_local_model`.
+
+### Deprecations
+- Legacy Jinja-based home page removed from `/`; the SPA is the default UI. The previous `/ui/new` remains as an alias.
 
 ## [1.1.0] - 2025-10-13
 

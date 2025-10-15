@@ -20,7 +20,8 @@ class TestApp(unittest.TestCase):
         """Test that the home page loads correctly"""
         response = self.app.get("/")
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"AI Code Assistant", response.data)
+        # SPA root should include the mount point
+        self.assertIn(b'id="root"', response.data)
 
     def test_generate_missing_prompt(self):
         """Test that the API returns an error when no prompt is provided"""
@@ -92,12 +93,12 @@ class TestApp(unittest.TestCase):
             data = json.loads(response.data)
             self.assertIn("error", data)
 
-    def test_index_lists_local_model(self):
-        """Index should list at least the local model option via adapters."""
-        response = self.app.get("/")
+    def test_models_endpoint_lists_local_model(self):
+        """Models API should include at least the local model option."""
+        response = self.app.get("/models")
         self.assertEqual(response.status_code, 200)
-        body = response.data.decode("utf-8", errors="ignore")
-        self.assertIn('<option value="local">', body)
+        models = json.loads(response.data)
+        self.assertTrue(any(m.get("id") == "local" for m in models))
 
     def test_generate_rate_limit_429(self):
         """/generate should return 429 after exceeding per-route limit."""

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, Response, g
+from flask import Flask, render_template, request, jsonify, Response, g, send_from_directory
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:  # for type hints only; avoids runtime import issues
@@ -90,7 +90,8 @@ def set_security_headers(response):
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         "script-src 'self' https://cdnjs.cloudflare.com; "
-        "style-src 'self' https://cdnjs.cloudflare.com"
+        "style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com"
     )
     # Record request metrics
     try:
@@ -116,8 +117,37 @@ def set_security_headers(response):
 
 @app.route("/")
 def index():
-    # Pass available models to the template
-    return render_template("index.html", models=available_models())
+    # Serve the new React-built SPA as the main UI
+    return send_from_directory("static/figmalol", "index.html")
+
+
+# Serve the React-built UI (SPA) from static/figmalol
+@app.route("/ui/new")
+def ui_new_index():
+    return send_from_directory("static/figmalol", "index.html")
+
+
+@app.route("/ui/<path:filename>")
+def ui_new_assets(filename: str):
+    # Serve assets referenced relatively by the SPA, e.g., /ui/assets/*
+    return send_from_directory("static/figmalol", filename)
+
+
+# Root-level assets used by the SPA when served from '/'
+@app.route("/assets/<path:filename>")
+def spa_assets(filename: str):
+    return send_from_directory("static/figmalol/assets", filename)
+
+
+@app.route("/vite.svg")
+def spa_vite_svg():
+    return send_from_directory("static/figmalol", "vite.svg")
+
+
+@app.route("/models")
+def get_models():
+    """Expose available models for the React UI."""
+    return jsonify(available_models())
 
 
 def generate_with_openai(prompt):
