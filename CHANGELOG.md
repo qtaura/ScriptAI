@@ -17,6 +17,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Redis-backed Flask-Limiter for distributed rate limiting
 - CLI rate limiting and improved offline mode documentation
 
+## [1.5.0] - Unreleased
+
+> A sneak peek at what’s landing in 1.5.0. Not final yet — details may evolve.
+
+### Added
+- CLI logging flags: `--verbose`, `--debug`, and `--trace` wired to centralized logging.
+- TRACE logging level for ultra-verbose diagnostics, including `logger.trace(...)` support.
+- Frontend error banners: destructive Alerts for model load/generation errors and misconfigured `modelCards.json` entries.
+
+### Changed
+- Centralized logging honors environment overrides (`LOG_LEVEL`, `LOG_TO_FILE`, `LOG_FILE_PATH`, `LOGGING_CONFIG`).
+- CLI initializes logging but skips Prometheus metrics to avoid duplicate registry entries.
+- Black-compliant formatting adjustments in `monitoring.py` for Python 3.9 CI stability.
+
+### Fixed
+- Vite import resolution: replace `class-variance-authority@0.7.1` with `class-variance-authority` in `frontend/src/components/ui/alert.tsx`.
+- Robust removal of `file` handler from logging configs when `LOG_TO_FILE=false`.
+
+### Documentation
+- README updated: centralized logging controls, JSON config example, and new CLI flags.
+
+### Teasers
+- Subtle quality-of-life upgrades: toast notifications, centralized error registry, and improved offline mode for CLI.
+- Better artifact handling for generated code (save/export and diff hints).
+- Multi-remote push ergonomics to smooth out origin/upstream workflows.
+
 ## [1.4.0] - 2025-10-15
 
 ### Added
