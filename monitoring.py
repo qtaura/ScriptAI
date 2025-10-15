@@ -59,6 +59,7 @@ class MonitoringManager:
 
     def setup_logging(self):
         """Setup logging configuration"""
+
         class JSONFormatter(logging.Formatter):
             """JSON formatter for structured logs suitable for production."""
 
