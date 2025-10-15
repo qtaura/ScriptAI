@@ -26,11 +26,11 @@ AI-powered code generation platform — fast, reliable, and extensible.
 
 ScriptAI turns natural language requirements into production-ready code. It ships a modern React SPA, a robust Flask API, and a convenient CLI — all backed by modular model adapters, security guardrails, and observability.
 
-### 1.3.0 Highlights
-- React SPA is now the default GUI at `/`.
-- Dark mode implemented via CSS tokens (shadcn-style) with persisted theme.
-- Model Select dropdown spacing fixed (no content overlap).
-- Updated tests and routes to reflect SPA-first experience.
+### 1.4.0 Highlights
+- JSON structured logging with per-request `request_id` for traceability.
+- `X-Request-ID` header support and automatic UUID generation when absent.
+- Monitoring logs now include `request_id` and model labels.
+- Black/MyPy compliance improvements; test suite verified.
 
 ## Table of Contents
 - Features
@@ -311,6 +311,20 @@ Create `config.json` for advanced settings:
 - `GET /stats` — Usage statistics (last 24h)
 - `GET /performance` — Latency, throughput, percentiles
 
+### Structured Logging & Request IDs
+- Logs are emitted in compact JSON to ease ingestion and analysis.
+- Each request carries a `request_id` (from `X-Request-ID` or auto-generated UUID) propagated into logs and echoed back in responses.
+
+Example log line
+```json
+{"level":"info","ts":"2025-10-15T12:34:56.789Z","message":"request","request_id":"demo-123","method":"POST","path":"/generate","status":200,"duration_ms":123,"model":"openai"}
+```
+
+Pass a custom request ID
+```bash
+curl -H "X-Request-ID: demo-123" http://127.0.0.1:5000/health -v
+```
+
 ## Testing & Quality
 - Run tests: `py -3 -m pytest -q`.
 - Formatting: Black (23.12.1) for consistent style.
@@ -319,9 +333,15 @@ Create `config.json` for advanced settings:
 ## CI/CD Pipeline
 - Automated tests on every commit
 - Security scanning and code quality checks
-- Release tags (e.g., `v1.3.0`) published via GitHub
+- Release tags (e.g., `v1.4.0`) published via GitHub
 
 ## Roadmap
+
+### Released (v1.4.0)
+- Structured JSON logging with `request_id` field across request lifecycle.
+- `X-Request-ID` middleware and header propagation in responses.
+- Monitoring logs enriched with model labels and request IDs.
+- Black/MyPy cleanups validated in CI.
 
 ### Released (v1.3.0)
 - SPA becomes the default UI served at `/`.

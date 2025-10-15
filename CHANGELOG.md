@@ -17,6 +17,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Redis-backed Flask-Limiter for distributed rate limiting
 - CLI rate limiting and improved offline mode documentation
 
+## [1.4.0] - 2025-10-15
+
+### Added
+- JSON structured logging formatter emitting compact, machine-parseable logs with `request_id`.
+- Request ID middleware: honors `X-Request-ID` header or generates a UUID when absent; echoes header in responses.
+- Monitoring logs now include `request_id` and model labels for end-to-end traceability.
+
+### Changed
+- Standardized logging across the app to structured JSON for consistency and easier ingestion.
+
+### Fixed
+- Removed unused `type: ignore` in `monitoring.py` to satisfy MyPy on py311.
+- Black formatting compliance: added blank line before nested `JSONFormatter` class.
+
+### Security
+- Verified `.env` is gitignored and repository contains no committed API keys (`sk-`/`api_key` patterns clean).
+
+### Tests
+- Pytest suite passes: 19 tests, 1 warning.
+
+### Documentation
+- README updated with structured logging and Request ID guidance; CI example tags reference `v1.4.0`.
+
 ## [1.3.0] - 2025-10-15
 
 ### Added
