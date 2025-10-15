@@ -62,7 +62,7 @@ class MonitoringManager:
         class JSONFormatter(logging.Formatter):
             """JSON formatter for structured logs suitable for production."""
 
-            def format(self, record: LogRecord) -> str:  # type: ignore[override]
+            def format(self, record: LogRecord) -> str:
                 try:
                     ts = datetime.utcfromtimestamp(record.created).isoformat() + "Z"
                 except Exception:
