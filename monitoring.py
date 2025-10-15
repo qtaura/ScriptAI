@@ -20,12 +20,6 @@ if not hasattr(logging, "TRACE"):
     logging.TRACE = TRACE_LEVEL_NUM  # type: ignore[attr-defined]
     logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
 
-    def trace(self, msg, *args, **kwargs):
-        if self.isEnabledFor(TRACE_LEVEL_NUM):
-            self._log(TRACE_LEVEL_NUM, msg, args, **kwargs)
-
-    logging.Logger.trace = trace  # type: ignore[assignment]
-
 
 class JSONFormatter(logging.Formatter):
     """JSON formatter for structured logs suitable for production."""
