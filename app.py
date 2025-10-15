@@ -56,6 +56,7 @@ app.config.setdefault("RATELIMIT_STRICT_TEST", False)
 security_manager = SecurityManager()
 monitoring_manager = MonitoringManager()
 
+
 # Validate environment on startup (non-fatal, logs only)
 def _validate_environment_on_startup() -> None:
     try:
@@ -98,6 +99,7 @@ def _validate_environment_on_startup() -> None:
     except Exception:
         # Never fail app startup due to validation/logging issues
         pass
+
 
 # Run validation immediately
 _validate_environment_on_startup()
