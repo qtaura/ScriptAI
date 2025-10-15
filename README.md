@@ -1,4 +1,18 @@
-# ScriptAI
+<div align="center">
+  <img src="static/images/logo.svg" alt="ScriptAI Logo" width="200"/>
+  <h1>ScriptAI</h1>
+  <p><strong>Enterprise-Grade AI-Powered Code Generation Platform</strong></p>
+  <p>
+    <a href="#features">Features</a> •
+    <a href="#architecture">Architecture</a> •
+    <a href="#quickstart">Quickstart</a> •
+    <a href="#usage">Usage</a> •
+    <a href="#api">API</a> •
+    <a href="#testing--quality">Testing</a> •
+    <a href="#roadmap">Roadmap</a> •
+    <a href="#license">License</a>
+  </p>
+</div>
 
 AI-powered code generation platform — fast, reliable, and extensible.
 
@@ -103,6 +117,114 @@ Options
 - `--file`  save output to file
 - `--interactive` launch interactive mode
 
+## Examples & Sample Outputs
+
+### Python Data Processing
+Prompt: "Create a Python function that reads a CSV file, filters rows where the 'age' column is greater than 30, and writes the result to a new CSV file."
+
+Generated Code (OpenAI GPT-3.5):
+```python
+import pandas as pd
+
+def filter_csv_by_age(input_file, output_file, min_age=30):
+    """
+    Read a CSV file, filter rows where age > min_age, and save to new file.
+    """
+    try:
+        df = pd.read_csv(input_file)
+        filtered_df = df[df['age'] > min_age]
+        filtered_df.to_csv(output_file, index=False)
+        return filtered_df
+    except FileNotFoundError:
+        return None
+    except Exception as e:
+        return None
+```
+
+### React Component
+Prompt: "Write a React component that displays a paginated list of items fetched from an API endpoint."
+
+Generated Code (HuggingFace StarCoder):
+```jsx
+import React, { useState, useEffect } from 'react';
+
+const PaginatedList = ({ apiEndpoint, itemsPerPage = 10 }) => {
+  const [items, setItems] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [totalPages, setTotalPages] = useState(0);
+
+  useEffect(() => {
+    fetchItems();
+  }, [currentPage, apiEndpoint]);
+
+  const fetchItems = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${apiEndpoint}?page=${currentPage}&limit=${itemsPerPage}`);
+      const data = await response.json();
+      setItems(data.items || []);
+      setTotalPages(Math.ceil(data.total / itemsPerPage));
+    } catch (err) {
+      setError('Failed to fetch items');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePageChange = (page) => setCurrentPage(page);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div className="paginated-list">
+      <div className="items">
+        {items.map((item, index) => (
+          <div key={item.id || index} className="item">
+            {JSON.stringify(item, null, 2)}
+          </div>
+        ))}
+      </div>
+      <div className="pagination">
+        <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>Previous</button>
+        <span>Page {currentPage} of {totalPages}</span>
+        <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>Next</button>
+      </div>
+    </div>
+  );
+};
+
+export default PaginatedList;
+```
+
+### SQL Query
+Prompt: "Create a SQL query that joins three tables (users, orders, products) and returns the total amount spent by each user on each product category."
+
+Generated Code (Local Model):
+```sql
+SELECT 
+    u.user_id,
+    u.username,
+    p.category,
+    SUM(o.quantity * p.price) as total_spent
+FROM users u
+INNER JOIN orders o ON u.user_id = o.user_id
+INNER JOIN products p ON o.product_id = p.product_id
+GROUP BY u.user_id, u.username, p.category
+ORDER BY u.username, p.category;
+```
+
+### Model Comparison
+
+| Model | Speed | Quality | Cost | Best For |
+|-------|-------|---------|------|----------|
+| OpenAI GPT-3.5 | Fast | High | Paid | Production code, complex algorithms |
+| HuggingFace StarCoder | Medium | Good | Free | Open source, code completion |
+| Local Model | Slow | Variable | Free | Privacy, offline use |
+
 ## API
 
 Generate code
@@ -121,19 +243,94 @@ GET /models
 
 Errors are returned as compact JSON with appropriate HTTP status codes.
 
+## Customization & Extensions
+
+### Web (Flask) Adapters
+
+Adapters live in `model_adapters.py` and follow a simple interface:
+
+```python
+class ModelAdapter:
+    def generate(self, prompt: str):
+        raise NotImplementedError
+
+class CustomAdapter(ModelAdapter):
+    def generate(self, prompt: str):
+        return "# your generated code", None
+```
+
+The web app routes requests based on `{ "model": "local|openai|huggingface" }`.
+
+### CLI Generators
+
+Extend the CLI in `cli.py` with a custom generator:
+
+```python
+class CustomModelGenerator(CodeGenerator):
+    def generate(self, prompt: str):
+        # Integrate your provider here
+        return self.format_code("// code"), None
+```
+
+## Customizing the Web Interface
+
+- Styling: `frontend/src/index.css` (SPA) and `static/css/style.css` (legacy)
+- Functionality: `frontend/src/components/*`
+- Templates: `templates/index.html` (legacy alias, SPA now default)
+
+## Configuration Options
+
+Create `config.json` for advanced settings:
+```json
+{
+  "models": {
+    "openai": { "temperature": 0.7, "max_tokens": 1500, "model": "gpt-3.5-turbo" },
+    "huggingface": { "temperature": 0.7, "max_tokens": 500, "model": "bigcode/starcoder" }
+  },
+  "security": { "max_prompt_length": 1000, "rate_limit": 100, "sanitize_input": true }
+}
+```
+
 ## Security
 - Input validation and sanitization for unsafe patterns.
 - Per-IP and per-route rate limiting via Flask-Limiter.
 - Sensible defaults for headers and error handling.
 
+## 🔒 Security Features
+
+### Input Validation & Sanitization
+- Prompt validation for malicious content and size
+- XSS protection: escaping and script removal
+
+### Security Endpoints
+- `/health` - System health check
+- `/security-stats` - Security statistics
+
+### Rate Limiting & Abuse Prevention
+- Default `100/hour` per IP; stricter test limits on `/generate`
+- 429 responses: `{ "error": "Rate limit exceeded. Try again later." }`
+
 ## Monitoring
 - Prometheus metrics exposed at `/metrics`.
 - Request counters, error counts, and latency histograms.
+
+## 🚀 Production Features
+
+- Health: `/health`
+- Stats: `/stats`
+- Performance: `/performance`
+- Metrics (text): `/metrics`
+- Metrics (JSON): `/metrics-json`
 
 ## Testing & Quality
 - Run tests: `py -3 -m pytest -q`.
 - Formatting: Black (23.12.1) for consistent style.
 - Type checking: MyPy; linting: Flake8; security scanning: Bandit.
+
+## CI/CD Pipeline
+- Automated tests on every commit
+- Security scanning and code quality checks
+- Release tags (e.g., `v1.3.0`) published via GitHub
 
 ## Roadmap
 
@@ -161,4 +358,10 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-Developed with care by the ScriptAI team.
+<div align="center">
+  <p>Developed with ❤️ by ScriptAI Team</p>
+  <p>
+    <a href="https://github.com/jailk123/ScriptAI/issues">Report Bug</a> •
+    <a href="https://github.com/jailk123/ScriptAI/issues">Request Feature</a>
+  </p>
+</div>
