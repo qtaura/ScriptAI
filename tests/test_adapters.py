@@ -57,9 +57,7 @@ class TestModelAdapters(unittest.TestCase):
 
             def json(self):
                 # Simulate HF response list with generated_text containing code block
-                return [
-                    {"generated_text": "```print('hello from hf mock')```"}
-                ]
+                return [{"generated_text": "```print('hello from hf mock')```"}]
 
         def _fake_post(url, headers=None, json=None, timeout=None):
             return _FakeResponse()
