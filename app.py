@@ -409,9 +409,19 @@ def generate_code():
             try:
                 if bool(app.config.get("ENABLE_FALLBACK", True)):
                     # Preferred order: keep primary first to preserve selection, then try others
-                    preferred_order = ["openai", "anthropic", "gemini", "huggingface", "local"]
+                    preferred_order = [
+                        "openai",
+                        "anthropic",
+                        "gemini",
+                        "huggingface",
+                        "local",
+                    ]
                     available_ids = _available_model_ids()
-                    candidates = [mid for mid in preferred_order if mid in available_ids and mid != model]
+                    candidates = [
+                        mid
+                        for mid in preferred_order
+                        if mid in available_ids and mid != model
+                    ]
 
                     # Record the initial upstream error
                     try:
@@ -443,14 +453,24 @@ def generate_code():
                                 )
                             except Exception:
                                 pass
-                            return jsonify({"code": alt_code, "model_used": alt, "fallback_from": model})
+                            return jsonify(
+                                {
+                                    "code": alt_code,
+                                    "model_used": alt,
+                                    "fallback_from": model,
+                                }
+                            )
                         else:
                             # Log each fallback attempt error for visibility
                             try:
                                 monitoring_manager.log_error(
                                     "adapter_error",
                                     alt_err or "Unknown adapter error",
-                                    {"client_ip": client_ip, "model": alt, "fallback_from": model},
+                                    {
+                                        "client_ip": client_ip,
+                                        "model": alt,
+                                        "fallback_from": model,
+                                    },
                                     request_id=getattr(g, "request_id", None),
                                 )
                             except Exception:

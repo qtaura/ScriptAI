@@ -204,12 +204,17 @@ class TestApp(unittest.TestCase):
 
         with patch(
             "app.get_adapter",
-            lambda model: FailingAdapter() if model == "openai" else (WorkingAdapter() if model == "local" else None),
+            lambda model: FailingAdapter()
+            if model == "openai"
+            else (WorkingAdapter() if model == "local" else None),
         ):
             # Ensure available_models returns both openai and local
             with patch(
                 "app.available_models",
-                lambda: [{"id": "openai", "name": "OpenAI"}, {"id": "local", "name": "Local Model"}],
+                lambda: [
+                    {"id": "openai", "name": "OpenAI"},
+                    {"id": "local", "name": "Local Model"},
+                ],
             ):
                 response = self.app.post(
                     "/generate",
