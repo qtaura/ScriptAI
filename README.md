@@ -95,6 +95,36 @@ python app.py
 # Open http://127.0.0.1:5000/
 ```
 
+## Logging
+
+- Centralized structured logging is configured via `monitoring.MonitoringManager`.
+- Default config loads from `logging.json` (or `logging.yaml`/`logging.yml` if present). Falls back to a JSON console logger and optional file logger.
+
+Environment variables:
+- `LOG_LEVEL`: Set severity (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`). Default: `INFO`.
+- `LOG_TO_FILE`: Enable/disable file logging (`true|false`). Default: `true`.
+- `LOG_FILE_PATH`: Path for the log file when enabled. Default: `scriptai.log`.
+- `LOGGING_CONFIG`: Override logging config file path (JSON/YAML), e.g. `logging.json`.
+
+JSON config example (`logging.json`):
+```
+{
+  "version": 1,
+  "disable_existing_loggers": false,
+  "formatters": { "json": { "()": "monitoring.JSONFormatter" } },
+  "handlers": {
+    "console": { "class": "logging.StreamHandler", "level": "INFO", "formatter": "json" },
+    "file":    { "class": "logging.FileHandler",  "level": "INFO", "formatter": "json", "filename": "scriptai.log" }
+  },
+  "root": { "level": "INFO", "handlers": ["console", "file"] },
+  "loggers": { "ScriptAI": { "level": "INFO", "propagate": true } }
+}
+```
+
+Notes:
+- When `LOG_TO_FILE=false`, the file handler is disabled even if present in `logging.json`.
+- `monitoring.JSONFormatter` outputs consistent fields: `timestamp`, `level`, `logger`, `message`, plus optional context like `request_id`, `model_name`, and `response_time`.
+
 ## Usage
 
 ### Web (SPA)

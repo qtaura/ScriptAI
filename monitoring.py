@@ -116,10 +116,28 @@ class MonitoringManager:
 
         Tries centralized config via LOGGING_CONFIG env var or default files:
         logging.yaml / logging.yml / logging.json. Falls back to JSONFormatter
-        with console and file handlers when no config is found or fails.
+        with console and optional file handlers when no config is found or fails.
         """
 
         applied_config = False
+
+        # Environment-driven settings
+        level_name = os.getenv("LOG_LEVEL", "INFO").upper()
+        log_level = getattr(logging, level_name, logging.INFO)
+
+        def _env_bool(name: str, default: bool = True) -> bool:
+            raw = os.getenv(name)
+            if raw is None:
+                return default
+            val = raw.strip().lower()
+            if val in {"0", "false", "no", "off"}:
+                return False
+            if val in {"1", "true", "yes", "on"}:
+                return True
+            return default
+
+        log_to_file = _env_bool("LOG_TO_FILE", True)
+        env_log_file = os.getenv("LOG_FILE_PATH", self.log_file)
 
         # Candidate config paths
         candidates: List[str] = []
@@ -148,8 +166,48 @@ class MonitoringManager:
                         config_data = json.load(f)
 
                 if isinstance(config_data, dict):
+                    # Apply environment overrides for level and file logging
+                    try:
+                        # Root level
+                        root_cfg = config_data.setdefault("root", {})
+                        root_cfg["level"] = level_name
+
+                        # Handlers adjustments
+                        handlers = config_data.setdefault("handlers", {})
+                        # Update file handler path if present
+                        if "file" in handlers:
+                            handlers["file"]["filename"] = env_log_file
+                            # Disable file handler entirely if LOG_TO_FILE=false
+                            if not log_to_file:
+                                handlers.pop("file", None)
+                                # Remove file from root handlers list
+                                root_handlers = root_cfg.setdefault("handlers", [])
+                                root_cfg["handlers"] = [h for h in root_handlers if h != "file"]
+
+                        # Ensure console exists
+                        if "console" in handlers:
+                            handlers["console"]["level"] = level_name
+
+                        # Update explicit logger levels (optional)
+                        loggers_cfg = config_data.setdefault("loggers", {})
+                        for name, lc in loggers_cfg.items():
+                            try:
+                                if isinstance(lc, dict):
+                                    lc["level"] = level_name
+                                    # Also remove file handler from individual loggers when disabled
+                                    if not log_to_file and "handlers" in lc:
+                                        lc["handlers"] = [h for h in lc.get("handlers", []) if h != "file"]
+                            except Exception:
+                                # Ignore malformed logger config
+                                pass
+                    except Exception:
+                        # Ignore overrides if anything goes wrong
+                        pass
+
                     try:
                         logging.config.dictConfig(config_data)
+                        # Ensure the configured level is applied to the root
+                        logging.getLogger().setLevel(log_level)
                         applied_config = True
                         break
                     except Exception:
@@ -163,17 +221,18 @@ class MonitoringManager:
 
         if not applied_config:
             # Fallback: configure handlers explicitly for consistent JSON output
-            file_handler = logging.FileHandler(self.log_file)
             stream_handler = logging.StreamHandler()
             formatter = JSONFormatter()
-            file_handler.setFormatter(formatter)
             stream_handler.setFormatter(formatter)
 
             root = logging.getLogger()
             root.handlers = []
-            root.setLevel(logging.INFO)
-            root.addHandler(file_handler)
+            root.setLevel(log_level)
             root.addHandler(stream_handler)
+            if log_to_file:
+                file_handler = logging.FileHandler(env_log_file)
+                file_handler.setFormatter(formatter)
+                root.addHandler(file_handler)
 
         self.logger = logging.getLogger("ScriptAI")
 
