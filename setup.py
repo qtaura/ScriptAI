@@ -30,11 +30,11 @@ setup(
     description="Enterprise-Grade AI-Powered Code Generation Platform",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
-    url="https://github.com/jailk123/ScriptAI",
+    url="https://github.com/qtaura/ScriptAI",
     project_urls={
-        "Bug Reports": "https://github.com/jailk123/ScriptAI/issues",
-        "Source": "https://github.com/jailk123/ScriptAI",
-        "Documentation": "https://github.com/jailk123/ScriptAI#readme",
+        "Bug Reports": "https://github.com/qtaura/ScriptAI/issues",
+        "Source": "https://github.com/qtaura/ScriptAI",
+        "Documentation": "https://github.com/qtaura/ScriptAI#readme",
     },
     packages=find_packages(),
     classifiers=[

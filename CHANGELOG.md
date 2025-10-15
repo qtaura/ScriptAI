@@ -33,10 +33,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Dark mode toggle is now functional across the app via CSS tokens; `.dark` class correctly drives theme.
 - Model Select dropdown no longer overlaps example prompts thanks to responsive spacing.
+- Tabs now highlight the active state consistently in Web vs CLI.
+- UI version labels updated to `v1.3.0` for consistency across Hero and Footer.
+- All GitHub links updated to new repository owner `qtaura/ScriptAI` (UI, templates, docs).
 
 ### Tests
 - `tests/test_app.py`: update `test_home_page` to assert SPA mount point (`id="root"`).
 - Replace template-based model check with `/models` API validation in `test_models_endpoint_lists_local_model`.
+
+### Documentation
+- README cleanup: consolidated Security and Monitoring sections, clarified Quickstart (Windows note) and CLI flags.
+- CI badge and issue links updated to the new repository.
 
 ### Deprecations
 - Legacy Jinja-based home page removed from `/`; the SPA is the default UI. The previous `/ui/new` remains as an alias.

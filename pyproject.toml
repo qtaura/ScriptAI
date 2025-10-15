@@ -55,11 +55,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jailk123/ScriptAI"
-Documentation = "https://github.com/jailk123/ScriptAI#readme"
-Repository = "https://github.com/jailk123/ScriptAI.git"
-Issues = "https://github.com/jailk123/ScriptAI/issues"
-Changelog = "https://github.com/jailk123/ScriptAI/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/qtaura/ScriptAI"
+Documentation = "https://github.com/qtaura/ScriptAI#readme"
+Repository = "https://github.com/qtaura/ScriptAI.git"
+Issues = "https://github.com/qtaura/ScriptAI/issues"
+Changelog = "https://github.com/qtaura/ScriptAI/blob/main/CHANGELOG.md"
 
 [project.scripts]
 scriptai = "cli:main"

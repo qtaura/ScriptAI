@@ -10,7 +10,7 @@ export function Hero() {
       <div className="container relative px-4 py-16 md:px-6 md:py-24">
         <div className="mx-auto max-w-3xl text-center">
           <Badge variant="secondary" className="mb-4 font-mono">
-            v1.2.0
+            v1.3.0
           </Badge>
           
           <h1 className="mb-4 text-3xl md:text-5xl leading-tight text-pretty">
@@ -32,7 +32,7 @@ export function Hero() {
             </Button>
             <Button size="lg" variant="outline" asChild className="w-full sm:w-auto">
               <a
-                href="https://github.com/jailk123/ScriptAI"
+                href="https://github.com/qtaura/ScriptAI"
                 target="_blank"
                 rel="noopener noreferrer"
               >

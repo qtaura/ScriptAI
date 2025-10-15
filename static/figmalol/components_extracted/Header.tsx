@@ -71,7 +71,7 @@ export function Header() {
             className="hidden md:flex"
           >
             <a
-              href="https://github.com/jailk123/ScriptAI"
+              href="https://github.com/qtaura/ScriptAI"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="View ScriptAI on GitHub"
@@ -105,7 +105,7 @@ export function Header() {
                 <Button className="w-full mt-4">Get Started</Button>
                 <Button variant="outline" className="w-full" asChild>
                   <a
-                    href="https://github.com/jailk123/ScriptAI"
+                    href="https://github.com/qtaura/ScriptAI"
                     target="_blank"
                     rel="noopener noreferrer"
                   >

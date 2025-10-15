@@ -20,7 +20,7 @@ export function Footer() {
             <div className="flex gap-2">
               <Button variant="ghost" size="icon" asChild>
                 <a
-                  href="https://github.com/jailk123/ScriptAI"
+                  href="https://github.com/qtaura/ScriptAI"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -63,7 +63,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <a
-                  href="https://github.com/jailk123/ScriptAI#installation"
+                  href="https://github.com/qtaura/ScriptAI#installation"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-foreground transition-colors inline-flex items-center gap-1"
@@ -74,7 +74,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com/jailk123/ScriptAI#usage"
+                  href="https://github.com/qtaura/ScriptAI#usage"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-foreground transition-colors inline-flex items-center gap-1"
@@ -85,7 +85,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com/jailk123/ScriptAI#examples--sample-outputs"
+                  href="https://github.com/qtaura/ScriptAI#examples--sample-outputs"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-foreground transition-colors inline-flex items-center gap-1"
@@ -96,7 +96,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com/jailk123/ScriptAI#testing"
+                  href="https://github.com/qtaura/ScriptAI#testing"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-foreground transition-colors inline-flex items-center gap-1"
@@ -114,7 +114,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <a
-                  href="https://github.com/jailk123/ScriptAI/blob/main/LICENSE"
+                  href="https://github.com/qtaura/ScriptAI/blob/main/LICENSE"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-foreground transition-colors inline-flex items-center gap-1"
@@ -125,7 +125,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com/jailk123/ScriptAI/blob/main/CONTRIBUTING.md"
+                  href="https://github.com/qtaura/ScriptAI/blob/main/CONTRIBUTING.md"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-foreground transition-colors inline-flex items-center gap-1"
@@ -136,7 +136,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com/jailk123/ScriptAI/issues"
+                  href="https://github.com/qtaura/ScriptAI/issues"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-foreground transition-colors inline-flex items-center gap-1"
@@ -147,7 +147,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com/jailk123/ScriptAI#roadmap"
+                  href="https://github.com/qtaura/ScriptAI#roadmap"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-foreground transition-colors inline-flex items-center gap-1"
@@ -166,10 +166,10 @@ export function Footer() {
               © 2025 ScriptAI. Released under MIT License.
             </p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="font-mono">v1.2.0</span>
+              <span className="font-mono">v1.3.0</span>
               <span>•</span>
               <a
-                href="https://github.com/jailk123/ScriptAI"
+                href="https://github.com/qtaura/ScriptAI"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-foreground transition-colors"

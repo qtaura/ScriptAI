@@ -32,7 +32,7 @@ export function Hero() {
             </Button>
             <Button size="lg" variant="outline" asChild className="w-full sm:w-auto">
               <a
-                href="https://github.com/jailk123/ScriptAI"
+                href="https://github.com/qtaura/ScriptAI"
                 target="_blank"
                 rel="noopener noreferrer"
               >

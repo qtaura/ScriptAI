@@ -16,7 +16,7 @@
 
 AI-powered code generation platform — fast, reliable, and extensible.
 
-[![CI](https://github.com/jailk123/ScriptAI/actions/workflows/ci.yml/badge.svg)](https://github.com/jailk123/ScriptAI/actions/workflows/ci.yml)
+[![CI](https://github.com/qtaura/ScriptAI/actions/workflows/ci.yml/badge.svg)](https://github.com/qtaura/ScriptAI/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](pyproject.toml)
 
@@ -90,6 +90,7 @@ cp .env.example .env
 
 3) Run the app
 ```
+# On Windows use: py -3 app.py
 python app.py
 # Open http://127.0.0.1:5000/
 ```
@@ -292,35 +293,23 @@ Create `config.json` for advanced settings:
 ```
 
 ## Security
-- Input validation and sanitization for unsafe patterns.
-- Per-IP and per-route rate limiting via Flask-Limiter.
-- Sensible defaults for headers and error handling.
-
-## 🔒 Security Features
-
 ### Input Validation & Sanitization
 - Prompt validation for malicious content and size
 - XSS protection: escaping and script removal
-
-### Security Endpoints
-- `/health` - System health check
-- `/security-stats` - Security statistics
 
 ### Rate Limiting & Abuse Prevention
 - Default `100/hour` per IP; stricter test limits on `/generate`
 - 429 responses: `{ "error": "Rate limit exceeded. Try again later." }`
 
+### Security Endpoints
+- `GET /health` — System health check
+- `GET /security-stats` — Security statistics
+
 ## Monitoring
-- Prometheus metrics exposed at `/metrics`.
-- Request counters, error counts, and latency histograms.
-
-## 🚀 Production Features
-
-- Health: `/health`
-- Stats: `/stats`
-- Performance: `/performance`
-- Metrics (text): `/metrics`
-- Metrics (JSON): `/metrics-json`
+- `GET /metrics` — Prometheus text format (standard exposition)
+- `GET /metrics-json` — Combined usage, performance, health for dashboards
+- `GET /stats` — Usage statistics (last 24h)
+- `GET /performance` — Latency, throughput, percentiles
 
 ## Testing & Quality
 - Run tests: `py -3 -m pytest -q`.
@@ -361,7 +350,7 @@ MIT — see [LICENSE](LICENSE).
 <div align="center">
   <p>Developed with ❤️ by ScriptAI Team</p>
   <p>
-    <a href="https://github.com/jailk123/ScriptAI/issues">Report Bug</a> •
-    <a href="https://github.com/jailk123/ScriptAI/issues">Request Feature</a>
+    <a href="https://github.com/qtaura/ScriptAI/issues">Report Bug</a> •
+    <a href="https://github.com/qtaura/ScriptAI/issues">Request Feature</a>
   </p>
 </div>
