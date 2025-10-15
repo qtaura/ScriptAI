@@ -109,7 +109,9 @@ class TestApp(unittest.TestCase):
         self.assertIsInstance(data, dict)
         self.assertIn("models", data)
         models = data.get("models", [])
-        self.assertTrue(any(isinstance(m, dict) and m.get("id") == "local" for m in models))
+        self.assertTrue(
+            any(isinstance(m, dict) and m.get("id") == "local" for m in models)
+        )
         # Validate common fields on the local provider
         local: Dict[str, Any] = next((m for m in models if m.get("id") == "local"), {})
         for field in ["id", "name", "speed", "quality", "cost", "available"]:
