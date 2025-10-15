@@ -220,7 +220,9 @@ class SecurityManager:
         """
         return bool(self.signing_secret)
 
-    def _compute_signature(self, body: bytes, timestamp: str, scheme: Optional[str] = None) -> str:
+    def _compute_signature(
+        self, body: bytes, timestamp: str, scheme: Optional[str] = None
+    ) -> str:
         """
         Compute the HMAC SHA256 hex digest for the given payload and timestamp.
 
@@ -229,10 +231,14 @@ class SecurityManager:
         """
         used_scheme = (scheme or self.signature_scheme).encode("utf-8")
         base = used_scheme + b":" + timestamp.encode("utf-8") + b":" + body
-        digest = hmac.new((self.signing_secret or "").encode("utf-8"), base, hashlib.sha256).hexdigest()
+        digest = hmac.new(
+            (self.signing_secret or "").encode("utf-8"), base, hashlib.sha256
+        ).hexdigest()
         return f"{(scheme or self.signature_scheme)}={digest}"
 
-    def sign_payload(self, body: bytes, timestamp: Optional[int] = None, scheme: Optional[str] = None) -> str:
+    def sign_payload(
+        self, body: bytes, timestamp: Optional[int] = None, scheme: Optional[str] = None
+    ) -> str:
         """
         Produce an HMAC signature header value for a request body.
 
@@ -266,7 +272,9 @@ class SecurityManager:
         """
         # Resolve secret at verification time to allow env changes without restart
         if not self.signing_secret:
-            self.signing_secret = os.getenv("REQUEST_SIGNATURE_SECRET", os.getenv("SIGNING_SECRET"))
+            self.signing_secret = os.getenv(
+                "REQUEST_SIGNATURE_SECRET", os.getenv("SIGNING_SECRET")
+            )
 
         # If signature verification isn't configured, allow unless strictly required
         if not self.signing_secret:
@@ -277,10 +285,11 @@ class SecurityManager:
             return True, None
 
         # Extract headers
-        sig_header = headers.get(self.signature_header) or headers.get(self.signature_header.lower())
-        ts_header = (
-            headers.get(self.signature_timestamp_header)
-            or headers.get(self.signature_timestamp_header.lower())
+        sig_header = headers.get(self.signature_header) or headers.get(
+            self.signature_header.lower()
+        )
+        ts_header = headers.get(self.signature_timestamp_header) or headers.get(
+            self.signature_timestamp_header.lower()
         )
 
         if not sig_header:
