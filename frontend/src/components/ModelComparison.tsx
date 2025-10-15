@@ -1,16 +1,49 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Check, Zap, Clock, DollarSign } from "lucide-react";
+import { Check } from "lucide-react";
+import { getIcon } from "../config/iconMap";
+
+type ModelCardConfig = {
+  id?: string;
+  name: string;
+  badge: string;
+  speed: string;
+  quality: string;
+  cost: string;
+  icon?: string;
+  features: string[];
+  color: string;
+  bgColor: string;
+};
 
 export function ModelComparison() {
-  const models = [
+  const [models, setModels] = useState<ModelCardConfig[]>([]);
+
+  useEffect(() => {
+    // Load config from public/modelCards.json; fallback to built-in defaults
+    fetch("/modelCards.json")
+      .then((r) => r.json())
+      .then((data: { models?: ModelCardConfig[] }) => {
+        const items = (data && data.models) || [];
+        if (items.length > 0) {
+          setModels(items);
+          return;
+        }
+        setModels(defaultModels);
+      })
+      .catch(() => setModels(defaultModels));
+  }, []);
+
+  const defaultModels: ModelCardConfig[] = [
     {
+      id: "openai",
       name: "OpenAI GPT-3.5",
       badge: "Recommended",
       speed: "Fast",
       quality: "High",
       cost: "Paid",
-      icon: Zap,
+      icon: "Zap",
       features: [
         "Production-ready code",
         "Complex algorithms",
@@ -21,12 +54,13 @@ export function ModelComparison() {
       bgColor: "bg-green-600/10",
     },
     {
+      id: "starcoder",
       name: "HuggingFace StarCoder",
       badge: "Open Source",
       speed: "Medium",
       quality: "Good",
       cost: "Free",
-      icon: Clock,
+      icon: "Clock",
       features: [
         "Code completion",
         "Good for snippets",
@@ -37,12 +71,13 @@ export function ModelComparison() {
       bgColor: "bg-blue-600/10",
     },
     {
+      id: "local",
       name: "Local Model",
       badge: "Privacy",
       speed: "Slow",
       quality: "Variable",
       cost: "Free",
-      icon: DollarSign,
+      icon: "DollarSign",
       features: [
         "Offline capability",
         "Complete privacy",
@@ -66,7 +101,7 @@ export function ModelComparison() {
 
         <div className="grid gap-6 md:grid-cols-3">
           {models.map((model, index) => {
-            const Icon = model.icon;
+            const Icon = getIcon(model.icon);
             return (
               <Card key={index} className="relative overflow-hidden transition-shadow hover:shadow-md">
                 <div className={`absolute top-0 right-0 h-24 w-24 ${model.bgColor} blur-3xl`} />
