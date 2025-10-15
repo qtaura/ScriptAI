@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Table of Contents
 - [Unreleased](#unreleased)
 - [1.5.0 - Unreleased](#150---unreleased)
+- [1.4.5 - 2025-10-15](#145---2025-10-15)
 - [1.4.0 - 2025-10-15](#140---2025-10-15)
 - [1.3.0 - 2025-10-14](#130---2025-10-14)
 - [1.2.0 - 2025-10-13](#120---2025-10-13)
@@ -51,6 +52,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Subtle quality-of-life upgrades: toast notifications, centralized error registry, and improved offline mode for CLI.
 - Better artifact handling for generated code (save/export and diff hints).
 - Multi-remote push ergonomics to smooth out origin/upstream workflows.
+
+## [1.4.5] - 2025-10-15
+
+### Fixed
+- Select dropdown layering with `z-index` increase to avoid overlap with the Generate button and prompt text.
+- Robust frontend mapping of `/models` response to canonical IDs (supports legacy string lists and object-based schema). Ensures Local Model appears enabled when server reports availability.
+
+### Changed
+- Model selector displays all models from `modelCards.json` while disabling those not reported by `/models`; disabled entries show “(requires key)”.
+- Block generation attempts for disabled/unavailable models and show a clear error banner.
+- Graceful fallback if `/models` fails: UI still renders model cards, marks unknown ones disabled.
+
+### Build
+- Rebuilt frontend assets under `static/figmalol` to include the selector fixes.
 
 ## [1.4.0] - 2025-10-15
 

@@ -215,6 +215,10 @@ def spa_assets(filename: str):
 def spa_vite_svg():
     return send_from_directory("static/figmalol", "vite.svg")
 
+@app.route("/modelCards.json")
+def spa_model_cards():
+    return send_from_directory("static/figmalol", "modelCards.json")
+
 
 @app.route("/models")
 def get_models():

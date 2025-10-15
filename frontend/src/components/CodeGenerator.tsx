@@ -29,6 +29,7 @@ export function CodeGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [models, setModels] = useState<{ id: string; name: string }[]>([]);
+  const [availableIds, setAvailableIds] = useState<string[]>([]);
   const [generatedCode, setGeneratedCode] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isModelOpen, setIsModelOpen] = useState(false);
@@ -45,31 +46,57 @@ export function CodeGenerator() {
           .filter((m) => m.id && m.name);
         return mapped;
       })
-      .catch(() => []);
+      .catch(() =>
+        // Fallback to SPA-served path when Flask serves UI from /ui/*
+        fetch("/ui/modelCards.json")
+          .then((r) => r.json())
+          .then((data: { models?: { id?: string; name?: string }[] }) => {
+            const items = Array.isArray(data?.models) ? data.models : [];
+            const mapped = items
+              .map((m) => ({ id: String(m.id || ""), name: String(m.name || "") }))
+              .filter((m) => m.id && m.name);
+            return mapped;
+          })
+          .catch(() => [])
+      );
 
     const loadAvailable = fetch("/models")
       .then((r) => r.json())
-      .then((ms: { id: string; name: string }[]) => {
-        const valid = Array.isArray(ms)
-          ? ms.filter((m) => m && typeof m.id === "string" && m.id)
-          : [];
-        return valid.map((m) => m.id);
+      .then((ms: Array<{ id?: string; name?: string } | string>) => {
+        const toId = (m: { id?: string; name?: string } | string) => {
+          if (typeof m === "string") {
+            const n = m.toLowerCase();
+            if (n.includes("openai")) return "openai";
+            if (n.includes("starcoder") || n.includes("huggingface")) return "huggingface";
+            if (n.includes("anthropic") || n.includes("claude")) return "anthropic";
+            if (n.includes("gemini") || n.includes("google")) return "gemini";
+            if (n.includes("local")) return "local";
+            return "";
+          }
+          const id = (m && typeof m.id === "string" && m.id) ? m.id : "";
+          if (id) return id;
+          const name = (m && typeof m.name === "string" && m.name) ? m.name.toLowerCase() : "";
+          if (name.includes("openai")) return "openai";
+          if (name.includes("starcoder") || name.includes("huggingface")) return "huggingface";
+          if (name.includes("anthropic") || name.includes("claude")) return "anthropic";
+          if (name.includes("gemini") || name.includes("google")) return "gemini";
+          if (name.includes("local")) return "local";
+          return "";
+        };
+        const ids = Array.isArray(ms) ? ms.map(toId).filter(Boolean) : [];
+        return ids;
       })
       .catch(() => []);
 
     Promise.all([loadConfig, loadAvailable])
-      .then(([configModels, availableIds]) => {
+      .then(([configModels, ids]) => {
+        // Preserve config-defined display names but mark availability separately
+        setAvailableIds(ids);
         let finalModels = configModels;
-        if (availableIds.length > 0) {
-          // Intersect config with server-available models to avoid unknown model errors
-          finalModels = configModels.filter((m) => availableIds.includes(m.id));
-          // If intersection is empty, fall back to server list names
-          if (finalModels.length === 0) {
-            finalModels = availableIds.map((id) => ({ id, name: id }));
-            setModelError(
-              "No matching models between config and server availability. Using server list.",
-            );
-          }
+        if (finalModels.length === 0 && ids.length > 0) {
+          // Fallback to server list names when no config
+          finalModels = ids.map((id) => ({ id, name: id }));
+          setModelError("No config found. Using server model list.");
         }
         if (finalModels.length === 0) {
           // Fallback to local placeholder
@@ -79,8 +106,14 @@ export function CodeGenerator() {
           );
         }
         setModels(finalModels);
-        const defaultModel = finalModels.find((m) => m.id === "local") || finalModels[0];
+        // Choose first available model if present, otherwise prefer local
+        const availableDefault = finalModels.find((m) => ids.includes(m.id));
+        const defaultModel = availableDefault || finalModels.find((m) => m.id === "local") || finalModels[0];
         if (defaultModel) setModel(defaultModel.id);
+        // Inform about disabled items if some config models aren’t available
+        if (finalModels.some((m) => !ids.includes(m.id))) {
+          setModelError("Some models require API keys and are disabled until configured.");
+        }
       })
       .catch(() => {
         setModels([{ id: "local", name: "Local Model (Placeholder)" }]);
@@ -154,6 +187,11 @@ ORDER BY u.username, p.category;`,
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
+    // Prevent generating with a model the server cannot handle
+    if (availableIds.length > 0 && !availableIds.includes(model)) {
+      setErrorMessage("Selected model is not available. Configure API keys and try again.");
+      return;
+    }
     setIsGenerating(true);
     setErrorMessage("");
     setGeneratedCode("");
@@ -245,11 +283,15 @@ ORDER BY u.username, p.category;`,
                         {models.length === 0 ? (
                           <SelectItem value="local">Local Model (Placeholder)</SelectItem>
                         ) : (
-                          models.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>
-                              {m.name}
-                            </SelectItem>
-                          ))
+                          models.map((m) => {
+                            const available = availableIds.includes(m.id);
+                            const label = available ? m.name : `${m.name} (requires key)`;
+                            return (
+                              <SelectItem key={m.id} value={m.id} disabled={!available}>
+                                {label}
+                              </SelectItem>
+                            );
+                          })
                         )}
                       </SelectContent>
                     </Select>

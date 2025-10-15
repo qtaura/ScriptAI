@@ -50,8 +50,28 @@ export function ModelComparison() {
         setModels(valid);
       })
       .catch(() => {
-        setConfigError("Unable to load model cards configuration. Showing defaults.");
-        setModels(defaultModels);
+        // Fallback to SPA-served path when Flask serves UI from /ui/*
+        fetch("/ui/modelCards.json")
+          .then((r) => r.json())
+          .then((data: { models?: ModelCardConfig[] }) => {
+            const items = (data && data.models) || [];
+            const valid = items.filter(
+              (m) =>
+                m && typeof m.name === "string" && m.name && typeof m.badge === "string" && m.badge &&
+                typeof m.speed === "string" && typeof m.quality === "string" && typeof m.cost === "string" &&
+                Array.isArray(m.features),
+            );
+            if (valid.length === 0) {
+              setConfigError("Unable to load model cards configuration. Showing defaults.");
+              setModels(defaultModels);
+              return;
+            }
+            setModels(valid);
+          })
+          .catch(() => {
+            setConfigError("Unable to load model cards configuration. Showing defaults.");
+            setModels(defaultModels);
+          });
       });
   }, []);
 
@@ -72,6 +92,40 @@ export function ModelComparison() {
       ],
       color: "text-green-600",
       bgColor: "bg-green-600/10",
+    },
+    {
+      id: "anthropic",
+      name: "Anthropic Claude",
+      badge: "Reliable",
+      speed: "Fast",
+      quality: "High",
+      cost: "Paid",
+      icon: "Sparkles",
+      features: [
+        "Strong reasoning",
+        "Safe outputs",
+        "Long context windows",
+        "Great coding assistance",
+      ],
+      color: "text-amber-600",
+      bgColor: "bg-amber-600/10",
+    },
+    {
+      id: "gemini",
+      name: "Google Gemini",
+      badge: "Powerful",
+      speed: "Fast",
+      quality: "High",
+      cost: "Paid",
+      icon: "Brain",
+      features: [
+        "Multi-modal capabilities",
+        "Strong reasoning",
+        "Good code generation",
+        "Google ecosystem integration",
+      ],
+      color: "text-teal-600",
+      bgColor: "bg-teal-600/10",
     },
     {
       id: "huggingface",
