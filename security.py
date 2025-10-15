@@ -11,6 +11,7 @@ import os
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict, deque
 import html
+import logging
 
 
 class SecurityManager:
@@ -51,6 +52,9 @@ class SecurityManager:
         self.compiled_patterns = [
             re.compile(pattern, re.IGNORECASE) for pattern in self.dangerous_patterns
         ]
+
+        # Structured logger (configured by MonitoringManager)
+        self.logger = logging.getLogger("ScriptAI.Security")
 
     def validate_prompt(self, prompt: str) -> Tuple[bool, Optional[str]]:
         """
@@ -167,20 +171,24 @@ class SecurityManager:
         self, event_type: str, details: str, client_ip: Optional[str] = None
     ):
         """
-        Log security events for monitoring
+        Log security events using structured logging.
 
         Args:
             event_type: Type of security event
             details: Event details
             client_ip: Client IP if available
         """
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        log_entry = f"[{timestamp}] SECURITY: {event_type} - {details}"
-        if client_ip:
-            log_entry += f" - IP: {client_ip}"
-
-        # In production, this would go to a proper logging system
-        print(log_entry)
+        try:
+            self.logger.warning(
+                event_type,
+                extra={
+                    "message": details,
+                    "client_ip": client_ip,
+                },
+            )
+        except Exception:
+            # Never fail due to logging issues
+            pass
 
     def get_security_stats(self) -> Dict:
         """

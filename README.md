@@ -317,6 +317,35 @@ Create `config.json` for advanced settings:
 - `GET /stats` — Usage statistics (last 24h)
 - `GET /performance` — Latency, throughput, percentiles
 
+### Centralized Logging Config
+- Configure logging globally via `LOGGING_CONFIG` env var or drop-in files:
+  - Detection order: `LOGGING_CONFIG` → `logging.yaml` → `logging.yml` → `logging.json`.
+  - If no config is found, ScriptAI falls back to JSON logs with console + file handlers (`scriptai.log`).
+- JSON format uses the built-in `monitoring.JSONFormatter` for structured output.
+- YAML support requires `PyYAML`. If YAML parsing fails, the app falls back to JSON or defaults.
+
+Included sample: `logging.json`
+```json
+{
+  "version": 1,
+  "disable_existing_loggers": false,
+  "formatters": {"json": {"()": "monitoring.JSONFormatter"}},
+  "handlers": {
+    "console": {"class": "logging.StreamHandler", "level": "INFO", "formatter": "json", "stream": "ext://sys.stdout"},
+    "file":    {"class": "logging.FileHandler", "level": "INFO", "formatter": "json", "filename": "scriptai.log", "encoding": "utf-8"}
+  },
+  "root": {"level": "INFO", "handlers": ["console", "file"]},
+  "loggers": {"ScriptAI": {"level": "INFO", "propagate": true}, "ScriptAI.Security": {"level": "INFO", "propagate": true}}
+}
+```
+
+Use a custom config path
+```bash
+# Windows PowerShell
+$env:LOGGING_CONFIG = "C:\\path\\to\\logging.json"
+py -3 app.py
+```
+
 ### Structured Logging & Request IDs
 - Logs are emitted in compact JSON to ease ingestion and analysis.
 - Each request carries a `request_id` (from `X-Request-ID` or auto-generated UUID) propagated into logs and echoed back in responses.

@@ -10,7 +10,61 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from collections import defaultdict, deque
 import logging
+import logging.config
 from logging import LogRecord
+
+
+class JSONFormatter(logging.Formatter):
+    """JSON formatter for structured logs suitable for production."""
+
+    def format(self, record: LogRecord) -> str:
+        try:
+            ts = datetime.utcfromtimestamp(record.created).isoformat() + "Z"
+        except Exception:
+            ts = datetime.utcnow().isoformat() + "Z"
+
+        log: Dict[str, Any] = {
+            "timestamp": ts,
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+
+        # Optional extra fields commonly used in our app
+        # Use getattr to avoid AttributeError if missing
+        req_id = getattr(record, "request_id", None)
+        model_name = getattr(record, "model_name", None)
+        client_ip = getattr(record, "client_ip", None)
+        endpoint = getattr(record, "endpoint", None)
+        method = getattr(record, "method", None)
+        status = getattr(record, "status", None)
+        error = getattr(record, "error", None)
+        response_time = getattr(record, "response_time", None)
+        prompt_length = getattr(record, "prompt_length", None)
+        success = getattr(record, "success", None)
+
+        if req_id is not None:
+            log["request_id"] = req_id
+        if model_name is not None:
+            log["model_name"] = model_name
+        if client_ip is not None:
+            log["client_ip"] = client_ip
+        if endpoint is not None:
+            log["endpoint"] = endpoint
+        if method is not None:
+            log["method"] = method
+        if status is not None:
+            log["status"] = status
+        if error is not None:
+            log["error"] = error
+        if response_time is not None:
+            log["response_time"] = response_time
+        if prompt_length is not None:
+            log["prompt_length"] = prompt_length
+        if success is not None:
+            log["success"] = success
+
+        return json.dumps(log, ensure_ascii=False)
 
 
 def _get_prom_client() -> Optional[Any]:
@@ -58,72 +112,68 @@ class MonitoringManager:
             self.error_counter = None
 
     def setup_logging(self):
-        """Setup logging configuration"""
+        """Setup logging configuration.
 
-        class JSONFormatter(logging.Formatter):
-            """JSON formatter for structured logs suitable for production."""
+        Tries centralized config via LOGGING_CONFIG env var or default files:
+        logging.yaml / logging.yml / logging.json. Falls back to JSONFormatter
+        with console and file handlers when no config is found or fails.
+        """
 
-            def format(self, record: LogRecord) -> str:
-                try:
-                    ts = datetime.utcfromtimestamp(record.created).isoformat() + "Z"
-                except Exception:
-                    ts = datetime.utcnow().isoformat() + "Z"
+        applied_config = False
 
-                log: Dict[str, Any] = {
-                    "timestamp": ts,
-                    "level": record.levelname,
-                    "logger": record.name,
-                    "message": record.getMessage(),
-                }
+        # Candidate config paths
+        candidates: List[str] = []
+        env_path = os.getenv("LOGGING_CONFIG")
+        if env_path and env_path.strip():
+            candidates.append(env_path.strip())
+        candidates.extend(["logging.yaml", "logging.yml", "logging.json"])
 
-                # Optional extra fields commonly used in our app
-                # Use getattr to avoid AttributeError if missing
-                req_id = getattr(record, "request_id", None)
-                model_name = getattr(record, "model_name", None)
-                client_ip = getattr(record, "client_ip", None)
-                endpoint = getattr(record, "endpoint", None)
-                method = getattr(record, "method", None)
-                status = getattr(record, "status", None)
-                error = getattr(record, "error", None)
-                response_time = getattr(record, "response_time", None)
-                prompt_length = getattr(record, "prompt_length", None)
-                success = getattr(record, "success", None)
+        for path in candidates:
+            try:
+                if not os.path.exists(path):
+                    continue
 
-                if req_id is not None:
-                    log["request_id"] = req_id
-                if model_name is not None:
-                    log["model_name"] = model_name
-                if client_ip is not None:
-                    log["client_ip"] = client_ip
-                if endpoint is not None:
-                    log["endpoint"] = endpoint
-                if method is not None:
-                    log["method"] = method
-                if status is not None:
-                    log["status"] = status
-                if error is not None:
-                    log["error"] = error
-                if response_time is not None:
-                    log["response_time"] = response_time
-                if prompt_length is not None:
-                    log["prompt_length"] = prompt_length
-                if success is not None:
-                    log["success"] = success
+                config_data: Optional[Dict[str, Any]] = None
+                if path.endswith((".yaml", ".yml")):
+                    try:
+                        import yaml  # type: ignore
 
-                return json.dumps(log, ensure_ascii=False)
+                        with open(path, "r", encoding="utf-8") as f:
+                            config_data = yaml.safe_load(f)
+                    except Exception:
+                        # YAML not available or failed to parse; continue
+                        config_data = None
+                elif path.endswith(".json"):
+                    with open(path, "r", encoding="utf-8") as f:
+                        config_data = json.load(f)
 
-        # Configure handlers explicitly to ensure consistent JSON output
-        file_handler = logging.FileHandler(self.log_file)
-        stream_handler = logging.StreamHandler()
-        formatter = JSONFormatter()
-        file_handler.setFormatter(formatter)
-        stream_handler.setFormatter(formatter)
+                if isinstance(config_data, dict):
+                    try:
+                        logging.config.dictConfig(config_data)
+                        applied_config = True
+                        break
+                    except Exception:
+                        # DictConfig failed; try next candidate
+                        applied_config = False
+                        continue
+            except Exception:
+                # Never crash due to logging config
+                applied_config = False
+                continue
 
-        root = logging.getLogger()
-        root.handlers = []
-        root.setLevel(logging.INFO)
-        root.addHandler(file_handler)
-        root.addHandler(stream_handler)
+        if not applied_config:
+            # Fallback: configure handlers explicitly for consistent JSON output
+            file_handler = logging.FileHandler(self.log_file)
+            stream_handler = logging.StreamHandler()
+            formatter = JSONFormatter()
+            file_handler.setFormatter(formatter)
+            stream_handler.setFormatter(formatter)
+
+            root = logging.getLogger()
+            root.handlers = []
+            root.setLevel(logging.INFO)
+            root.addHandler(file_handler)
+            root.addHandler(stream_handler)
 
         self.logger = logging.getLogger("ScriptAI")
 
