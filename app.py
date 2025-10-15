@@ -15,6 +15,7 @@ import os
 import requests
 import time
 from dotenv import load_dotenv
+import uuid
 from typing import Optional, Callable
 from model_adapters import get_adapter, available_models
 from security import SecurityManager
@@ -88,6 +89,13 @@ def _start_timer():
     g._start_time = time.time()
 
 
+@app.before_request
+def _assign_request_id():
+    """Assign a request ID for tracing; use header if provided."""
+    hdr = request.headers.get("X-Request-ID")
+    g.request_id = hdr if isinstance(hdr, str) and hdr.strip() else uuid.uuid4().hex
+
+
 @app.after_request
 def set_security_headers(response):
     """Apply security headers to all responses"""
@@ -117,6 +125,14 @@ def set_security_headers(response):
                 rl.labels(endpoint=endpoint, method=method, status=str(status)).observe(
                     duration
                 )
+    except Exception:
+        pass
+
+    # Propagate request ID to responses for client-side correlation
+    try:
+        req_id = getattr(g, "request_id", None)
+        if isinstance(req_id, str):
+            response.headers["X-Request-ID"] = req_id
     except Exception:
         pass
 
@@ -240,7 +256,10 @@ def _json_error(message: str, status: int):
 def _handle_rate_limit(e):  # pragma: no cover (exercised via tests)
     try:
         monitoring_manager.log_error(
-            "rate_limit_exceeded", str(e), {"client_ip": request.remote_addr}
+            "rate_limit_exceeded",
+            str(e),
+            {"client_ip": request.remote_addr},
+            request_id=getattr(g, "request_id", None),
         )
     except Exception:
         pass
@@ -310,6 +329,7 @@ def generate_code():
             success=error is None,
             client_ip=client_ip,
             error=error,
+            request_id=getattr(g, "request_id", None),
         )
 
         if error:
@@ -322,7 +342,10 @@ def generate_code():
     except Exception as e:
         response_time = time.time() - start_time
         monitoring_manager.log_error(
-            "unexpected_error", str(e), {"client_ip": client_ip}
+            "unexpected_error",
+            str(e),
+            {"client_ip": client_ip},
+            request_id=getattr(g, "request_id", None),
         )
         monitoring_manager.log_request(
             model="unknown",
@@ -331,6 +354,7 @@ def generate_code():
             success=False,
             client_ip=client_ip,
             error=str(e),
+            request_id=getattr(g, "request_id", None),
         )
         return jsonify({"error": "An unexpected error occurred"}), 500
 

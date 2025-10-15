@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from collections import defaultdict, deque
 import logging
+from logging import LogRecord
 
 
 def _get_prom_client() -> Optional[Any]:
@@ -58,11 +59,71 @@ class MonitoringManager:
 
     def setup_logging(self):
         """Setup logging configuration"""
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-            handlers=[logging.FileHandler(self.log_file), logging.StreamHandler()],
-        )
+        class JSONFormatter(logging.Formatter):
+            """JSON formatter for structured logs suitable for production."""
+
+            def format(self, record: LogRecord) -> str:  # type: ignore[override]
+                try:
+                    ts = datetime.utcfromtimestamp(record.created).isoformat() + "Z"
+                except Exception:
+                    ts = datetime.utcnow().isoformat() + "Z"
+
+                log: Dict[str, Any] = {
+                    "timestamp": ts,
+                    "level": record.levelname,
+                    "logger": record.name,
+                    "message": record.getMessage(),
+                }
+
+                # Optional extra fields commonly used in our app
+                # Use getattr to avoid AttributeError if missing
+                req_id = getattr(record, "request_id", None)
+                model_name = getattr(record, "model_name", None)
+                client_ip = getattr(record, "client_ip", None)
+                endpoint = getattr(record, "endpoint", None)
+                method = getattr(record, "method", None)
+                status = getattr(record, "status", None)
+                error = getattr(record, "error", None)
+                response_time = getattr(record, "response_time", None)
+                prompt_length = getattr(record, "prompt_length", None)
+                success = getattr(record, "success", None)
+
+                if req_id is not None:
+                    log["request_id"] = req_id
+                if model_name is not None:
+                    log["model_name"] = model_name
+                if client_ip is not None:
+                    log["client_ip"] = client_ip
+                if endpoint is not None:
+                    log["endpoint"] = endpoint
+                if method is not None:
+                    log["method"] = method
+                if status is not None:
+                    log["status"] = status
+                if error is not None:
+                    log["error"] = error
+                if response_time is not None:
+                    log["response_time"] = response_time
+                if prompt_length is not None:
+                    log["prompt_length"] = prompt_length
+                if success is not None:
+                    log["success"] = success
+
+                return json.dumps(log, ensure_ascii=False)
+
+        # Configure handlers explicitly to ensure consistent JSON output
+        file_handler = logging.FileHandler(self.log_file)
+        stream_handler = logging.StreamHandler()
+        formatter = JSONFormatter()
+        file_handler.setFormatter(formatter)
+        stream_handler.setFormatter(formatter)
+
+        root = logging.getLogger()
+        root.handlers = []
+        root.setLevel(logging.INFO)
+        root.addHandler(file_handler)
+        root.addHandler(stream_handler)
+
         self.logger = logging.getLogger("ScriptAI")
 
     def _init_prometheus_metrics(self):
@@ -104,6 +165,7 @@ class MonitoringManager:
         success: bool,
         client_ip: Optional[str] = None,
         error: Optional[str] = None,
+        request_id: Optional[str] = None,
     ):
         """
         Log a request with metrics
@@ -142,15 +204,18 @@ class MonitoringManager:
         }
         self.performance_metrics.append(metric)
 
-        # Log to file
+        # Log structured event
         log_level = logging.INFO if success else logging.ERROR
-        self.logger.log(
-            log_level,
-            f"Request: model={model}, time={response_time:.2f}s, success={success}",
-        )
-
-        if error:
-            self.logger.error(f"Error: {error}")
+        extra = {
+            "request_id": request_id,
+            "model_name": model,
+            "client_ip": client_ip,
+            "response_time": round(response_time, 4),
+            "prompt_length": prompt_length,
+            "success": success,
+            "error": error,
+        }
+        self.logger.log(log_level, "model_generate", extra=extra)
 
         # Prometheus metrics
         try:
@@ -176,6 +241,7 @@ class MonitoringManager:
         error_type: str,
         error_message: str,
         context: Optional[Dict[str, Any]] = None,
+        request_id: Optional[str] = None,
     ):
         """
         Log an error with context
@@ -194,9 +260,14 @@ class MonitoringManager:
             "context": context or {},
         }
 
-        self.logger.error(f"Error: {error_type} - {error_message}")
-        if context:
-            self.logger.error(f"Context: {json.dumps(context)}")
+        self.logger.error(
+            f"{error_type}: {error_message}",
+            extra={
+                "request_id": request_id,
+                "error": error_message,
+                "context": context or {},
+            },
+        )
 
         # Prometheus error counter
         try:
