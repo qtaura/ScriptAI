@@ -100,6 +100,20 @@ class TestApp(unittest.TestCase):
         models = json.loads(response.data)
         self.assertTrue(any(m.get("id") == "local" for m in models))
 
+    def test_model_profiles_endpoint_structure(self):
+        """Model profiles should include required fields and local provider."""
+        response = self.app.get("/model-profiles")
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertIsInstance(data, dict)
+        self.assertIn("models", data)
+        models = data.get("models", [])
+        self.assertTrue(any(isinstance(m, dict) and m.get("id") == "local" for m in models))
+        # Validate common fields on the local provider
+        local = next((m for m in models if m.get("id") == "local"), {})
+        for field in ["id", "name", "speed", "quality", "cost", "available"]:
+            self.assertIn(field, local)
+
     def test_generate_rate_limit_429(self):
         """/generate should return 429 after exceeding per-route limit."""
         # Enable strict test limits and use a unique client IP to avoid collisions

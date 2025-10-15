@@ -29,6 +29,7 @@ export function CodeGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [models, setModels] = useState<{ id: string; name: string }[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, { speed?: string; quality?: string; cost?: string; badge?: string; available?: boolean }>>({});
   const [availableIds, setAvailableIds] = useState<string[]>([]);
   const [generatedCode, setGeneratedCode] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -36,7 +37,27 @@ export function CodeGenerator() {
   const [modelError, setModelError] = useState<string>("");
 
   useEffect(() => {
-    // Dynamic Model Registry: prefer single JSON config and filter by server availability
+    // Dynamic Model Registry: prefer backend profiles, fallback to JSON config; filter by server availability
+    const loadProfiles = fetch("/model-profiles")
+      .then((r) => r.json())
+      .then((data: { models?: Array<any> }) => {
+        const items = Array.isArray(data?.models) ? data.models : [];
+        const mapped: Record<string, { speed?: string; quality?: string; cost?: string; badge?: string; available?: boolean }> = {};
+        items.forEach((m) => {
+          const id = String(m?.id || "");
+          if (!id) return;
+          mapped[id] = {
+            speed: typeof m?.speed === "string" ? m.speed : undefined,
+            quality: typeof m?.quality === "string" ? m.quality : undefined,
+            cost: typeof m?.cost === "string" ? m.cost : undefined,
+            badge: typeof m?.badge === "string" ? m.badge : undefined,
+            available: typeof m?.available === "boolean" ? m.available : undefined,
+          };
+        });
+        return mapped;
+      })
+      .catch(() => ({}));
+
     const loadConfig = fetch("/modelCards.json")
       .then((r) => r.json())
       .then((data: { models?: { id?: string; name?: string }[] }) => {
@@ -88,10 +109,13 @@ export function CodeGenerator() {
       })
       .catch(() => []);
 
-    Promise.all([loadConfig, loadAvailable])
-      .then(([configModels, ids]) => {
+    Promise.all([loadProfiles, loadConfig, loadAvailable])
+      .then(([loadedProfiles, configModels, ids]) => {
         // Preserve config-defined display names but mark availability separately
         setAvailableIds(ids);
+        if (loadedProfiles && Object.keys(loadedProfiles).length > 0) {
+          setProfiles(loadedProfiles);
+        }
         let finalModels = configModels;
         if (finalModels.length === 0 && ids.length > 0) {
           // Fallback to server list names when no config
@@ -288,7 +312,23 @@ ORDER BY u.username, p.category;`,
                             const label = available ? m.name : `${m.name} (requires key)`;
                             return (
                               <SelectItem key={m.id} value={m.id} disabled={!available}>
-                                {label}
+                                <div className="flex flex-col gap-1">
+                                  <div>{label}</div>
+                                  <div className="grid grid-cols-3 gap-2 text-[10px] text-muted-foreground">
+                                    <div>
+                                      <span className="mr-1">Speed</span>
+                                      <span className="font-mono">{profiles[m.id]?.speed || "—"}</span>
+                                    </div>
+                                    <div>
+                                      <span className="mr-1">Quality</span>
+                                      <span className="font-mono">{profiles[m.id]?.quality || "—"}</span>
+                                    </div>
+                                    <div>
+                                      <span className="mr-1">Cost</span>
+                                      <span className="font-mono">{profiles[m.id]?.cost || "—"}</span>
+                                    </div>
+                                  </div>
+                                </div>
                               </SelectItem>
                             );
                           })
@@ -419,6 +459,20 @@ ORDER BY u.username, p.category;`,
                             <div>Model: {model === "openai" ? "gpt-3.5-turbo" : model}</div>
                             <div>Language: {language || "auto-detect"}</div>
                             <div>Generated: Just now</div>
+                            <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
+                              <div>
+                                <span className="text-muted-foreground">Speed</span>
+                                <div>{profiles[model]?.speed || "—"}</div>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Quality</span>
+                                <div>{profiles[model]?.quality || "—"}</div>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Cost</span>
+                                <div>{profiles[model]?.cost || "—"}</div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                         <div>

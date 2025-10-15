@@ -23,54 +23,80 @@ export function ModelComparison() {
   const [configError, setConfigError] = useState<string>("");
 
   useEffect(() => {
-    // Load config from public/modelCards.json; fallback to built-in defaults
-    fetch("/modelCards.json")
+    // Prefer backend dynamic profiles; fallback to public/modelCards.json
+    fetch("/model-profiles")
       .then((r) => r.json())
-      .then((data: { models?: ModelCardConfig[] }) => {
-        const items = (data && data.models) || [];
-        if (items.length === 0) {
-          setConfigError("No model cards found in configuration. Showing defaults.");
-          setModels(defaultModels);
-          return;
-        }
-        const valid = items.filter(
-          (m) =>
-            m && typeof m.name === "string" && m.name && typeof m.badge === "string" && m.badge &&
-            typeof m.speed === "string" && typeof m.quality === "string" && typeof m.cost === "string" &&
-            Array.isArray(m.features),
-        );
-        if (valid.length < items.length) {
-          setConfigError("Some model entries in configuration are invalid. Rendering available items.");
-        }
-        if (valid.length === 0) {
-          setConfigError("Failed to parse model cards configuration. Showing defaults.");
-          setModels(defaultModels);
-          return;
-        }
+      .then((data: { models?: any[] }) => {
+        const items = Array.isArray(data?.models) ? data!.models! : [];
+        const valid = items
+          .map((m) => ({
+            id: m?.id,
+            name: String(m?.name || ""),
+            badge: String(m?.badge || ""),
+            speed: String(m?.speed || ""),
+            quality: String(m?.quality || ""),
+            cost: String(m?.cost || ""),
+            icon: String(m?.icon || ""),
+            features: Array.isArray(m?.features) ? m.features : [],
+            color: "text-green-600",
+            bgColor: "bg-green-600/10",
+          }))
+          .filter(
+            (m) =>
+              m && m.name && m.badge && m.speed && m.quality && m.cost && Array.isArray(m.features),
+          );
+        if (valid.length === 0) throw new Error("Invalid backend profiles");
         setModels(valid);
       })
       .catch(() => {
-        // Fallback to SPA-served path when Flask serves UI from /ui/*
-        fetch("/ui/modelCards.json")
+        // Fallback to public config or SPA-served path when Flask serves UI from /ui/*
+        fetch("/modelCards.json")
           .then((r) => r.json())
           .then((data: { models?: ModelCardConfig[] }) => {
             const items = (data && data.models) || [];
+            if (items.length === 0) {
+              setConfigError("No model cards found in configuration. Showing defaults.");
+              setModels(defaultModels);
+              return;
+            }
             const valid = items.filter(
               (m) =>
                 m && typeof m.name === "string" && m.name && typeof m.badge === "string" && m.badge &&
                 typeof m.speed === "string" && typeof m.quality === "string" && typeof m.cost === "string" &&
                 Array.isArray(m.features),
             );
+            if (valid.length < items.length) {
+              setConfigError("Some model entries in configuration are invalid. Rendering available items.");
+            }
             if (valid.length === 0) {
-              setConfigError("Unable to load model cards configuration. Showing defaults.");
+              setConfigError("Failed to parse model cards configuration. Showing defaults.");
               setModels(defaultModels);
               return;
             }
             setModels(valid);
           })
           .catch(() => {
-            setConfigError("Unable to load model cards configuration. Showing defaults.");
-            setModels(defaultModels);
+            fetch("/ui/modelCards.json")
+              .then((r) => r.json())
+              .then((data: { models?: ModelCardConfig[] }) => {
+                const items = (data && data.models) || [];
+                const valid = items.filter(
+                  (m) =>
+                    m && typeof m.name === "string" && m.name && typeof m.badge === "string" && m.badge &&
+                    typeof m.speed === "string" && typeof m.quality === "string" && typeof m.cost === "string" &&
+                    Array.isArray(m.features),
+                );
+                if (valid.length === 0) {
+                  setConfigError("Unable to load model cards configuration. Showing defaults.");
+                  setModels(defaultModels);
+                  return;
+                }
+                setModels(valid);
+              })
+              .catch(() => {
+                setConfigError("Unable to load model cards configuration. Showing defaults.");
+                setModels(defaultModels);
+              });
           });
       });
   }, []);

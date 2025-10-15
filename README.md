@@ -71,6 +71,10 @@ Backend availability is controlled via environment variables:
 
 This approach keeps one source of truth for display names and metadata while ensuring only configured providers are selectable.
 
+Model Profiles API:
+- `GET /model-profiles` returns `{ models: [ { id, name, speed, quality, cost, available, badge, icon, features[] } ], timestamp }`.
+- Fields are categorical and meant for UI display; `available` reflects configured credentials.
+
 Provider SDKs (optional adapters):
 - Install Anthropic and Gemini SDKs when using these adapters:
   - `pip install anthropic google-generativeai`
@@ -94,6 +98,7 @@ ScriptAI/
 Key endpoints:
 - `GET /` — React SPA
 - `GET /models` — Available model adapters
+- `GET /model-profiles` — Dynamic provider metadata (speed, cost, quality, availability)
 - `POST /generate` — Code generation
 - `GET /metrics` — Prometheus metrics
 - `GET /health` — Health check
