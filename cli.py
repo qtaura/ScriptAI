@@ -494,13 +494,29 @@ Any other input will be treated as a prompt for code generation.
             return False
 
     def _switch_model(self, model_name: str) -> bool:
-        """Switch the current AI model"""
-        if model_name not in self.generators:
-            print(f"Unknown model: {model_name}")
+        """Switch the current AI model with validation and helpful recovery"""
+        requested = (model_name or "").strip().lower()
+
+        # Validate model exists
+        if requested not in self.generators:
+            print(f"Unknown model: {requested}")
             print(f"Available models: {', '.join(self.generators.keys())}")
+            print(f"Staying on current model: {self.current_model}")
             return False
 
-        self.current_model = model_name
+        # Validate required credentials for remote providers
+        if requested == "openai" and not OPENAI_API_KEY:
+            print("OpenAI API key not configured; cannot switch to 'openai'.")
+            print("Tip: set OPENAI_API_KEY in your .env or environment.")
+            print(f"Staying on current model: {self.current_model}")
+            return False
+        if requested == "huggingface" and not HUGGINGFACE_API_KEY:
+            print("HuggingFace API key not configured; cannot switch to 'huggingface'.")
+            print("Tip: set HUGGINGFACE_API_KEY in your .env or environment.")
+            print(f"Staying on current model: {self.current_model}")
+            return False
+
+        self.current_model = requested
         print(f"Switched to model: {self.current_model}")
         return True
 
@@ -614,9 +630,9 @@ def main():
     parser.add_argument(
         "--model",
         "-m",
-        choices=["openai", "huggingface", "local"],
+        # Accept any string; validate gracefully to avoid argparse exiting on invalid choices
         default="openai" if OPENAI_API_KEY else "huggingface",
-        help="Model to use for code generation",
+        help="Model to use for code generation (openai|huggingface|local)",
     )
     parser.add_argument(
         "--interactive", "-i", action="store_true", help="Run in interactive mode"
@@ -630,9 +646,12 @@ def main():
 
     cli = ScriptAICLI()
 
-    # Set the model from command line argument
+    # Set the model from command line argument; validate and recover gracefully
     if args.model:
-        cli._switch_model(args.model)
+        if not cli._switch_model(args.model):
+            print(
+                f"Invalid or unavailable model '{args.model}'. Using default '{cli.current_model}'."
+            )
 
     # Show examples if requested
     if args.examples:
