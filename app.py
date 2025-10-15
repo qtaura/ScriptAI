@@ -291,11 +291,14 @@ def generate_code():
         if not prompt.strip():
             return _json_error("No prompt provided", 400)
 
+        # Sanitize input before passing to model adapters
+        sanitized_prompt = security_manager.sanitize_input(prompt)
+
         # Generate code based on selected model using adapters
         adapter = get_adapter(model)
         if adapter is None:
             return _json_error(f"Unknown model: {model}", 400)
-        code, error = adapter.generate(prompt)
+        code, error = adapter.generate(sanitized_prompt)
 
         response_time = time.time() - start_time
 
