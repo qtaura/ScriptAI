@@ -478,8 +478,12 @@ class ScriptAICLI:
 
         # Report API key status (non-fatal)
         print(f"- OPENAI_API_KEY: {_key_status('OPENAI_API_KEY', OPENAI_API_KEY)}")
-        print(f"- HUGGINGFACE_API_KEY: {_key_status('HUGGINGFACE_API_KEY', HUGGINGFACE_API_KEY)}")
-        print(f"- ANTHROPIC_API_KEY: {_key_status('ANTHROPIC_API_KEY', ANTHROPIC_API_KEY)}")
+        print(
+            f"- HUGGINGFACE_API_KEY: {_key_status('HUGGINGFACE_API_KEY', HUGGINGFACE_API_KEY)}"
+        )
+        print(
+            f"- ANTHROPIC_API_KEY: {_key_status('ANTHROPIC_API_KEY', ANTHROPIC_API_KEY)}"
+        )
         print(f"- GOOGLE_API_KEY: {_key_status('GOOGLE_API_KEY', GOOGLE_API_KEY)}")
 
         # Ensure config directory exists
@@ -824,7 +828,11 @@ def main():
             else (
                 "huggingface"
                 if HUGGINGFACE_API_KEY
-                else ("anthropic" if ANTHROPIC_API_KEY else ("gemini" if GOOGLE_API_KEY else "local"))
+                else (
+                    "anthropic"
+                    if ANTHROPIC_API_KEY
+                    else ("gemini" if GOOGLE_API_KEY else "local")
+                )
             )
         ),
         help="Model to use for code generation (openai|huggingface|anthropic|gemini|local)",

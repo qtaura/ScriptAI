@@ -146,7 +146,10 @@ class AnthropicAdapter(ModelAdapter):
         try:
             import anthropic
         except Exception as e:  # pragma: no cover
-            return None, f"Anthropic client import error: {str(e)}. Install with: pip install anthropic"
+            return (
+                None,
+                f"Anthropic client import error: {str(e)}. Install with: pip install anthropic",
+            )
 
         if not ANTHROPIC_API_KEY:
             return (

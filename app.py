@@ -215,6 +215,7 @@ def spa_assets(filename: str):
 def spa_vite_svg():
     return send_from_directory("static/figmalol", "vite.svg")
 
+
 @app.route("/modelCards.json")
 def spa_model_cards():
     return send_from_directory("static/figmalol", "modelCards.json")
@@ -386,7 +387,11 @@ def generate_code():
 
         if error:
             # Upstream provider errors: return as clean JSON, 502
-            status_code = 502 if model in {"openai", "huggingface", "anthropic", "gemini"} else 500
+            status_code = (
+                502
+                if model in {"openai", "huggingface", "anthropic", "gemini"}
+                else 500
+            )
             return _json_error(error, status_code)
 
         return jsonify({"code": code})
