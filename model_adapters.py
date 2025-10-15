@@ -49,9 +49,27 @@ class OpenAIAdapter(ModelAdapter):
                 messages=messages,
                 max_tokens=1500,
                 temperature=0.7,
+                request_timeout=30,
             )
             return response.choices[0].message.content, None
         except Exception as e:
+            # Provide more robust, production-friendly error messages
+            try:
+                # Older OpenAI SDK exposes exceptions under openai.error
+                if hasattr(openai, "error"):
+                    if isinstance(e, getattr(openai.error, "RateLimitError", Exception)):
+                        return None, "OpenAI rate limit exceeded"
+                    if isinstance(e, getattr(openai.error, "AuthenticationError", Exception)):
+                        return None, "Invalid OpenAI API key"
+                    if isinstance(e, getattr(openai.error, "Timeout", Exception)):
+                        return None, "OpenAI API timeout"
+                    if isinstance(e, getattr(openai.error, "APIConnectionError", Exception)):
+                        return None, f"OpenAI API connection error: {str(e)}"
+                    if isinstance(e, getattr(openai.error, "APIError", Exception)):
+                        return None, f"OpenAI API error: {str(e)}"
+            except Exception:
+                # Fall back gracefully if introspection fails
+                pass
             return None, f"Error with OpenAI API: {str(e)}"
 
 
@@ -97,6 +115,19 @@ class HuggingFaceAdapter(ModelAdapter):
                     return generated_text.strip(), None
                 return "No code generated", None
             else:
+                # Provide friendlier error messages for common cases
+                if response.status_code == 429:
+                    return None, "HuggingFace rate limit exceeded"
+                if 500 <= response.status_code < 600:
+                    return None, f"HuggingFace service error ({response.status_code})"
+                # Try to surface error details from JSON payload if present
+                try:
+                    err = response.json()
+                    detail = err.get("error") if isinstance(err, dict) else None
+                    if detail:
+                        return None, f"HuggingFace API error: {detail}"
+                except Exception:
+                    pass
                 return None, f"Error: API returned status code {response.status_code}"
         except Exception as e:
             return None, f"Error with HuggingFace API: {str(e)}"
