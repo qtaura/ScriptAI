@@ -46,7 +46,7 @@ ScriptAI turns natural language requirements into production-ready code. It ship
 - License
 
 ## Features
-- Multi-model adapters: OpenAI, HuggingFace, and Local.
+- Multi-model adapters: OpenAI, HuggingFace, Anthropic Claude, Google Gemini, and Local.
 - Modern SPA with theme support, keyboard-friendly UX, and syntax highlighting.
 - CLI with interactive sessions and direct command mode.
 - Prometheus metrics (`/metrics`) and lightweight dashboards.
@@ -65,9 +65,16 @@ Backend availability is controlled via environment variables:
 
 - `OPENAI_API_KEY` enables the `openai` adapter.
 - `HUGGINGFACE_API_KEY` enables the `huggingface` adapter.
+- `ANTHROPIC_API_KEY` enables the `anthropic` adapter.
+- `GOOGLE_API_KEY` enables the `gemini` adapter.
 - `local` is always available as a placeholder.
 
 This approach keeps one source of truth for display names and metadata while ensuring only configured providers are selectable.
+
+Provider SDKs (optional adapters):
+- Install Anthropic and Gemini SDKs when using these adapters:
+  - `pip install anthropic google-generativeai`
+  - If not installed, the server returns a clear error indicating the missing package.
 
 ## Architecture
 
@@ -165,7 +172,7 @@ python cli.py "Create a Python quicksort" --model openai --file quicksort.py
 ```
 
 Options
-- `--model` (`openai|huggingface|local`)
+- `--model` (`openai|huggingface|anthropic|gemini|local`)
 - `--file`  save output to file
 - `--interactive` launch interactive mode
 

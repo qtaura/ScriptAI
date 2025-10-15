@@ -5,6 +5,8 @@ from typing import Optional, Tuple, Dict, Any, List
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 
 class ModelAdapter:
@@ -139,6 +141,96 @@ class HuggingFaceAdapter(ModelAdapter):
             return None, f"Error with HuggingFace API: {str(e)}"
 
 
+class AnthropicAdapter(ModelAdapter):
+    def generate(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
+        try:
+            import anthropic
+        except Exception as e:  # pragma: no cover
+            return None, f"Anthropic client import error: {str(e)}. Install with: pip install anthropic"
+
+        if not ANTHROPIC_API_KEY:
+            return (
+                None,
+                (
+                    "Anthropic API key not found. "
+                    "Please set the ANTHROPIC_API_KEY environment variable."
+                ),
+            )
+
+        try:
+            client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+            system_prompt = (
+                "You are an expert programmer. Generate clean, efficient code "
+                "with minimal explanation. Prefer returning only the code block."
+            )
+            resp = client.messages.create(
+                model="claude-3-5-sonnet-20240620",
+                max_tokens=1500,
+                temperature=0.7,
+                system=system_prompt,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            # Extract text from response
+            try:
+                # Claude responses are an array of content blocks
+                text = "".join([getattr(b, "text", "") for b in resp.content])
+            except Exception:
+                text = getattr(resp, "content", "") or getattr(resp, "output_text", "")
+            code = str(text or "").strip()
+            if "```" in code:
+                parts = code.split("```")
+                if len(parts) >= 2:
+                    return parts[1].strip(), None
+            return code, None
+        except Exception as e:  # pragma: no cover
+            # Provide friendlier error messages for common cases
+            msg = str(e)
+            if "rate" in msg.lower():
+                return None, "Anthropic rate limit exceeded"
+            if "auth" in msg.lower() or "key" in msg.lower():
+                return None, "Invalid Anthropic API key"
+            return None, f"Error with Anthropic API: {msg}"
+
+
+class GeminiAdapter(ModelAdapter):
+    def generate(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
+        try:
+            import google.generativeai as genai
+        except Exception as e:  # pragma: no cover
+            return None, (
+                f"Google Generative AI import error: {str(e)}. Install with: pip install google-generativeai"
+            )
+
+        if not GOOGLE_API_KEY:
+            return (
+                None,
+                (
+                    "Google API key not found. "
+                    "Please set the GOOGLE_API_KEY environment variable."
+                ),
+            )
+
+        try:
+            genai.configure(api_key=GOOGLE_API_KEY)
+            model = genai.GenerativeModel("gemini-1.5-pro")
+            resp = model.generate_content(prompt)
+            # Extract primary text output
+            text = getattr(resp, "text", "") or ""
+            code = str(text).strip()
+            if "```" in code:
+                parts = code.split("```")
+                if len(parts) >= 2:
+                    return parts[1].strip(), None
+            return code, None
+        except Exception as e:  # pragma: no cover
+            msg = str(e)
+            if "429" in msg or "rate" in msg.lower():
+                return None, "Gemini rate limit exceeded"
+            if "401" in msg or "403" in msg or "auth" in msg.lower():
+                return None, "Invalid Google API key"
+            return None, f"Error with Google Gemini API: {msg}"
+
+
 def _detect_language(prompt: str) -> str:
     p = prompt.lower()
     if any(k in p for k in ["react", "component", "javascript", "node", "frontend"]):
@@ -204,6 +296,10 @@ def get_adapter(model: str) -> Optional[ModelAdapter]:
         return OpenAIAdapter()
     if model == "huggingface":
         return HuggingFaceAdapter()
+    if model == "anthropic":
+        return AnthropicAdapter()
+    if model == "gemini":
+        return GeminiAdapter()
     if model == "local":
         return LocalAdapter()
     return None
@@ -215,5 +311,9 @@ def available_models() -> List[Dict[str, Any]]:
         models.append({"id": "openai", "name": "OpenAI GPT-3.5"})
     if HUGGINGFACE_API_KEY:
         models.append({"id": "huggingface", "name": "HuggingFace StarCoder"})
+    if ANTHROPIC_API_KEY:
+        models.append({"id": "anthropic", "name": "Anthropic Claude"})
+    if GOOGLE_API_KEY:
+        models.append({"id": "gemini", "name": "Google Gemini"})
     models.append({"id": "local", "name": "Local Model (Placeholder)"})
     return models

@@ -55,6 +55,8 @@ CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
 # Default to HuggingFace Inference API if OpenAI key not provided
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # Example prompts for different programming tasks
 EXAMPLE_PROMPTS = {
@@ -306,6 +308,79 @@ class LocalModelGenerator(CodeGenerator):
         return self._generate_stub("python", prompt)
 
 
+class AnthropicGenerator(CodeGenerator):
+    """Generate code using Anthropic Claude API"""
+
+    def generate(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
+        try:
+            import anthropic
+
+            if not ANTHROPIC_API_KEY:
+                return (
+                    None,
+                    (
+                        "Anthropic API key not found. "
+                        "Please set the ANTHROPIC_API_KEY environment variable."
+                    ),
+                )
+
+            client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+            system_prompt = (
+                "You are an expert programmer. Generate clean, efficient code "
+                "with minimal explanation. Prefer returning only the code block."
+            )
+            resp = client.messages.create(
+                model="claude-3-5-sonnet-20240620",
+                max_tokens=self.max_tokens,
+                temperature=self.temperature,
+                system=system_prompt,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            # Claude responses are content blocks; extract text
+            try:
+                text = "".join([getattr(b, "text", "") for b in resp.content])
+            except Exception:
+                text = getattr(resp, "content", "") or getattr(resp, "output_text", "")
+            return self.format_code(str(text or "")), None
+        except ImportError:
+            return (
+                None,
+                "Anthropic package not installed. Install it with: pip install anthropic",
+            )
+        except Exception as e:
+            return None, f"Error with Anthropic API: {str(e)}"
+
+
+class GeminiGenerator(CodeGenerator):
+    """Generate code using Google Gemini API"""
+
+    def generate(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
+        try:
+            import google.generativeai as genai
+
+            if not GOOGLE_API_KEY:
+                return (
+                    None,
+                    (
+                        "Google API key not found. "
+                        "Please set the GOOGLE_API_KEY environment variable."
+                    ),
+                )
+
+            genai.configure(api_key=GOOGLE_API_KEY)
+            model = genai.GenerativeModel("gemini-1.5-pro")
+            resp = model.generate_content(prompt)
+            text = getattr(resp, "text", "") or ""
+            return self.format_code(str(text)), None
+        except ImportError:
+            return (
+                None,
+                "Google Generative AI package not installed. Install it with: pip install google-generativeai",
+            )
+        except Exception as e:
+            return None, f"Error with Google Gemini API: {str(e)}"
+
+
 class ScriptAICLI:
     """Main CLI application class"""
 
@@ -327,6 +402,10 @@ class ScriptAICLI:
             self.current_model = "openai"
         elif HUGGINGFACE_API_KEY:
             self.current_model = "huggingface"
+        elif ANTHROPIC_API_KEY:
+            self.current_model = "anthropic"
+        elif GOOGLE_API_KEY:
+            self.current_model = "gemini"
         else:
             self.current_model = "local"
 
@@ -345,6 +424,22 @@ class ScriptAICLI:
                     "temperature", DEFAULT_TEMPERATURE
                 ),
                 max_tokens=self.config.get("huggingface", {}).get(
+                    "max_tokens", DEFAULT_MAX_TOKENS
+                ),
+            ),
+            "anthropic": AnthropicGenerator(
+                temperature=self.config.get("anthropic", {}).get(
+                    "temperature", DEFAULT_TEMPERATURE
+                ),
+                max_tokens=self.config.get("anthropic", {}).get(
+                    "max_tokens", DEFAULT_MAX_TOKENS
+                ),
+            ),
+            "gemini": GeminiGenerator(
+                temperature=self.config.get("gemini", {}).get(
+                    "temperature", DEFAULT_TEMPERATURE
+                ),
+                max_tokens=self.config.get("gemini", {}).get(
                     "max_tokens", DEFAULT_MAX_TOKENS
                 ),
             ),
@@ -369,7 +464,7 @@ class ScriptAICLI:
     def _validate_environment_on_startup(self) -> None:
         """Validate environment configuration and ensure required paths exist.
 
-        - Checks API keys for OpenAI and HuggingFace (format hints only)
+        - Checks API keys for OpenAI, HuggingFace, Anthropic, and Google (format hints only)
         - Ensures config and history files exist (creates minimal defaults)
         """
         print("\n[Environment Check]")
@@ -383,9 +478,9 @@ class ScriptAICLI:
 
         # Report API key status (non-fatal)
         print(f"- OPENAI_API_KEY: {_key_status('OPENAI_API_KEY', OPENAI_API_KEY)}")
-        print(
-            f"- HUGGINGFACE_API_KEY: {_key_status('HUGGINGFACE_API_KEY', HUGGINGFACE_API_KEY)}"
-        )
+        print(f"- HUGGINGFACE_API_KEY: {_key_status('HUGGINGFACE_API_KEY', HUGGINGFACE_API_KEY)}")
+        print(f"- ANTHROPIC_API_KEY: {_key_status('ANTHROPIC_API_KEY', ANTHROPIC_API_KEY)}")
+        print(f"- GOOGLE_API_KEY: {_key_status('GOOGLE_API_KEY', GOOGLE_API_KEY)}")
 
         # Ensure config directory exists
         if not os.path.exists(CONFIG_DIR):
@@ -402,6 +497,14 @@ class ScriptAICLI:
                 "max_tokens": DEFAULT_MAX_TOKENS,
             },
             "huggingface": {
+                "temperature": DEFAULT_TEMPERATURE,
+                "max_tokens": DEFAULT_MAX_TOKENS,
+            },
+            "anthropic": {
+                "temperature": DEFAULT_TEMPERATURE,
+                "max_tokens": DEFAULT_MAX_TOKENS,
+            },
+            "gemini": {
                 "temperature": DEFAULT_TEMPERATURE,
                 "max_tokens": DEFAULT_MAX_TOKENS,
             },
@@ -589,6 +692,16 @@ Any other input will be treated as a prompt for code generation.
             print("Tip: set HUGGINGFACE_API_KEY in your .env or environment.")
             print(f"Staying on current model: {self.current_model}")
             return False
+        if requested == "anthropic" and not ANTHROPIC_API_KEY:
+            print("Anthropic API key not configured; cannot switch to 'anthropic'.")
+            print("Tip: set ANTHROPIC_API_KEY in your .env or environment.")
+            print(f"Staying on current model: {self.current_model}")
+            return False
+        if requested == "gemini" and not GOOGLE_API_KEY:
+            print("Google API key not configured; cannot switch to 'gemini'.")
+            print("Tip: set GOOGLE_API_KEY in your .env or environment.")
+            print(f"Staying on current model: {self.current_model}")
+            return False
 
         self.current_model = requested
         print(f"Switched to model: {self.current_model}")
@@ -705,8 +818,16 @@ def main():
         "--model",
         "-m",
         # Accept any string; validate gracefully to avoid argparse exiting on invalid choices
-        default="openai" if OPENAI_API_KEY else "huggingface",
-        help="Model to use for code generation (openai|huggingface|local)",
+        default=(
+            "openai"
+            if OPENAI_API_KEY
+            else (
+                "huggingface"
+                if HUGGINGFACE_API_KEY
+                else ("anthropic" if ANTHROPIC_API_KEY else ("gemini" if GOOGLE_API_KEY else "local"))
+            )
+        ),
+        help="Model to use for code generation (openai|huggingface|anthropic|gemini|local)",
     )
     parser.add_argument(
         "--interactive", "-i", action="store_true", help="Run in interactive mode"
