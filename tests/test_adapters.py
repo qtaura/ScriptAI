@@ -2,6 +2,7 @@ import unittest
 import sys
 import os
 import types
+from typing import Any, cast
 from unittest.mock import patch
 
 # Add parent directory to path to import project modules
@@ -32,8 +33,8 @@ class TestModelAdapters(unittest.TestCase):
                 # Return deterministic code content without network calls
                 return _FakeResponse("print('hello from openai mock')")
 
-        # Create a fake openai module
-        openai_fake = types.ModuleType("openai")
+        # Create a fake openai module and mark it as Any for MyPy
+        openai_fake = cast(Any, types.ModuleType("openai"))
         openai_fake.ChatCompletion = _FakeChatCompletion
         # Provide an empty error namespace to satisfy isinstance checks if reached
         openai_fake.error = types.SimpleNamespace()
@@ -44,7 +45,8 @@ class TestModelAdapters(unittest.TestCase):
                 code, err = adapter.generate("Test prompt")
         self.assertIsNone(err)
         self.assertIsNotNone(code)
-        self.assertIn("hello from openai mock", code)
+        code_str = cast(str, code)
+        self.assertIn("hello from openai mock", code_str)
 
     def test_huggingface_adapter_success_with_mock(self):
         """HuggingFaceAdapter.generate returns code when requests is mocked."""
@@ -62,8 +64,8 @@ class TestModelAdapters(unittest.TestCase):
         def _fake_post(url, headers=None, json=None, timeout=None):
             return _FakeResponse()
 
-        # Create a fake requests module
-        requests_fake = types.ModuleType("requests")
+        # Create a fake requests module and mark it as Any for MyPy
+        requests_fake = cast(Any, types.ModuleType("requests"))
         requests_fake.post = _fake_post
 
         with patch.dict(sys.modules, {"requests": requests_fake}):
@@ -72,7 +74,8 @@ class TestModelAdapters(unittest.TestCase):
                 code, err = adapter.generate("Test prompt")
         self.assertIsNone(err)
         self.assertIsNotNone(code)
-        self.assertIn("hello from hf mock", code)
+        code_str = cast(str, code)
+        self.assertIn("hello from hf mock", code_str)
 
     def test_local_adapter_stub_generation(self):
         """LocalAdapter.generate returns a stub without network calls."""
@@ -80,7 +83,8 @@ class TestModelAdapters(unittest.TestCase):
         code, err = adapter.generate("Write a Python function to add two numbers")
         self.assertIsNone(err)
         self.assertIsNotNone(code)
-        self.assertTrue(len(code.strip()) > 0)
+        code_str = cast(str, code)
+        self.assertTrue(len(code_str.strip()) > 0)
 
 
 if __name__ == "__main__":
