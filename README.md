@@ -123,6 +123,11 @@ JSON config example (`logging.json`):
 
 Notes:
 - When `LOG_TO_FILE=false`, the file handler is disabled even if present in `logging.json`.
+
+CLI flags (shortcut to set `LOG_LEVEL`):
+- `--verbose` sets `LOG_LEVEL=INFO`
+- `--debug` sets `LOG_LEVEL=DEBUG`
+- `--trace` sets `LOG_LEVEL=TRACE` (extra-verbose; custom level supported)
 - `monitoring.JSONFormatter` outputs consistent fields: `timestamp`, `level`, `logger`, `message`, plus optional context like `request_id`, `model_name`, and `response_time`.
 
 ## Usage

@@ -38,6 +38,7 @@ from datetime import datetime
 from typing import Tuple, List, Optional, Dict, Any
 from dotenv import load_dotenv
 from security import SecurityManager
+from monitoring import MonitoringManager
 
 # Load environment variables
 load_dotenv()
@@ -714,8 +715,37 @@ def main():
     parser.add_argument(
         "--version", "-v", action="version", version=f"ScriptAI CLI v{VERSION}"
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose logging (sets LOG_LEVEL=INFO)",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging (sets LOG_LEVEL=DEBUG)",
+    )
+    parser.add_argument(
+        "--trace",
+        action="store_true",
+        help="Enable trace logging (sets LOG_LEVEL=TRACE)",
+    )
 
     args = parser.parse_args()
+
+    # Configure centralized logging early based on flags
+    level_name = os.getenv("LOG_LEVEL", "INFO").upper()
+    if getattr(args, "trace", False):
+        level_name = "TRACE"
+    elif getattr(args, "debug", False):
+        level_name = "DEBUG"
+    elif getattr(args, "verbose", False):
+        level_name = "INFO"
+
+    os.environ["LOG_LEVEL"] = level_name
+
+    monitoring = MonitoringManager(enable_metrics=False)
+    monitoring.setup_logging()
 
     cli = ScriptAICLI()
 

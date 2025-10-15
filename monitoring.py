@@ -14,6 +14,19 @@ import logging.config
 from logging import LogRecord
 
 
+# Optional TRACE level support for very verbose logging
+TRACE_LEVEL_NUM = 5
+if not hasattr(logging, "TRACE"):
+    logging.TRACE = TRACE_LEVEL_NUM  # type: ignore[attr-defined]
+    logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
+
+    def trace(self, msg, *args, **kwargs):
+        if self.isEnabledFor(TRACE_LEVEL_NUM):
+            self._log(TRACE_LEVEL_NUM, msg, args, **kwargs)
+
+    logging.Logger.trace = trace  # type: ignore[assignment]
+
+
 class JSONFormatter(logging.Formatter):
     """JSON formatter for structured logs suitable for production."""
 
@@ -86,7 +99,10 @@ class MonitoringManager:
     error_counter: Optional[Any]
 
     def __init__(
-        self, log_file: str = "scriptai.log", max_log_size: int = 10 * 1024 * 1024
+        self,
+        log_file: str = "scriptai.log",
+        max_log_size: int = 10 * 1024 * 1024,
+        enable_metrics: bool = True,
     ):
         self.log_file = log_file
         self.max_log_size = max_log_size
@@ -101,7 +117,9 @@ class MonitoringManager:
         self.load_stats()
 
         # Initialize Prometheus metrics if available
-        self._init_prometheus_metrics()
+        # Initialize Prometheus metrics unless disabled
+        if enable_metrics:
+            self._init_prometheus_metrics()
 
         # Ensure attributes exist for type checkers even if init path changes
         if not hasattr(self, "request_counter"):
