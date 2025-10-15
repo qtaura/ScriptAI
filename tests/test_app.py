@@ -2,6 +2,7 @@ import unittest
 import json
 import sys
 import os
+from typing import Any, Dict
 from unittest.mock import patch
 
 # Add parent directory to path to import app
@@ -110,7 +111,7 @@ class TestApp(unittest.TestCase):
         models = data.get("models", [])
         self.assertTrue(any(isinstance(m, dict) and m.get("id") == "local" for m in models))
         # Validate common fields on the local provider
-        local = next((m for m in models if m.get("id") == "local"), {})
+        local: Dict[str, Any] = next((m for m in models if m.get("id") == "local"), {})
         for field in ["id", "name", "speed", "quality", "cost", "available"]:
             self.assertIn(field, local)
 
