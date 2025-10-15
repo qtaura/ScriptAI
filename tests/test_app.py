@@ -177,6 +177,8 @@ class TestApp(unittest.TestCase):
             "app.get_adapter",
             lambda model: FailingAdapter() if model == "openai" else None,
         ):
+            # Ensure fallback is disabled for this test to assert original behavior
+            app.config["ENABLE_FALLBACK"] = False
             response = self.app.post(
                 "/generate",
                 data=json.dumps({"prompt": "x", "model": "openai"}),
@@ -185,6 +187,40 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 502)
         body = json.loads(response.data)
         self.assertIn("error", body)
+
+    def test_fallback_to_local_on_openai_error(self):
+        """When OpenAI fails and fallback is enabled, server should return code from local."""
+
+        class FailingAdapter:
+            def generate(self, prompt):
+                return None, "Upstream error"
+
+        class WorkingAdapter:
+            def generate(self, prompt):
+                return "// ok", None
+
+        # Enable fallback and provide adapters for openai (fail) and local (success)
+        app.config["ENABLE_FALLBACK"] = True
+
+        with patch(
+            "app.get_adapter",
+            lambda model: FailingAdapter() if model == "openai" else (WorkingAdapter() if model == "local" else None),
+        ):
+            # Ensure available_models returns both openai and local
+            with patch(
+                "app.available_models",
+                lambda: [{"id": "openai", "name": "OpenAI"}, {"id": "local", "name": "Local Model"}],
+            ):
+                response = self.app.post(
+                    "/generate",
+                    data=json.dumps({"prompt": "x", "model": "openai"}),
+                    content_type="application/json",
+                )
+        self.assertEqual(response.status_code, 200)
+        body = json.loads(response.data)
+        self.assertIn("code", body)
+        self.assertEqual(body.get("model_used"), "local")
+        self.assertEqual(body.get("fallback_from"), "openai")
 
     def test_adapter_exception_returns_500(self):
         """Unhandled adapter exception should be caught and return 500."""

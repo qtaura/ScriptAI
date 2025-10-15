@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI logging flags: `--verbose`, `--debug`, and `--trace` wired to centralized logging.
 - TRACE logging level for ultra-verbose diagnostics, including `logger.trace(...)` support.
 - Frontend error banners: destructive Alerts for model load/generation errors and misconfigured `modelCards.json` entries.
+- Backend generation fallback: if the selected provider errors, automatically retries with backup models (`openai → anthropic → gemini → huggingface → local`).
 
 ### Changed
 - Centralized logging honors environment overrides (`LOG_LEVEL`, `LOG_TO_FILE`, `LOG_FILE_PATH`, `LOGGING_CONFIG`).
@@ -47,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 - README updated: centralized logging controls, JSON config example, and new CLI flags.
+- Fallback system documented (response fields `model_used`/`fallback_from`; toggle via `ENABLE_FALLBACK`).
 
 ### Teasers
 - Subtle quality-of-life upgrades: toast notifications, centralized error registry, and improved offline mode for CLI.

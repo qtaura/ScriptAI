@@ -318,7 +318,12 @@ class CustomAdapter(ModelAdapter):
         return "# your generated code", None
 ```
 
-The web app routes requests based on `{ "model": "local|openai|huggingface" }`.
+The web app routes requests based on `{ "model": "local|openai|huggingface|anthropic|gemini" }`.
+
+### Fallback System
+- If the primary provider fails, the server automatically retries with backup models in a preferred order: `openai → anthropic → gemini → huggingface → local`.
+- Responses include `model_used` and `fallback_from` when a fallback is applied.
+- Toggle with `ENABLE_FALLBACK=true|false` (defaults to enabled).
 
 ### CLI Generators
 

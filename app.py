@@ -51,6 +51,11 @@ app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
 app.config["TEMPLATES_AUTO_RELOAD"] = False
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 300
 app.config.setdefault("RATELIMIT_STRICT_TEST", False)
+# Fallback toggle (defaults to enabled unless explicitly disabled)
+app.config.setdefault(
+    "ENABLE_FALLBACK",
+    os.getenv("ENABLE_FALLBACK", "true").strip().lower() in ("1", "true", "yes"),
+)
 
 # Initialize security and monitoring
 security_manager = SecurityManager()
@@ -304,6 +309,20 @@ def _json_error(message: str, status: int):
     return jsonify({"error": message}), status
 
 
+def _available_model_ids() -> list:
+    """Return list of available model IDs using adapters helper.
+
+    Falls back to ["local"] on any error to ensure at least one candidate exists.
+    """
+    try:
+        models = available_models()
+        if isinstance(models, list):
+            return [m.get("id") for m in models if isinstance(m, dict) and m.get("id")]
+    except Exception:
+        pass
+    return ["local"]
+
+
 # JSON handler for 429 Too Many Requests
 @app.errorhandler(429)
 def _handle_rate_limit(e):  # pragma: no cover (exercised via tests)
@@ -386,7 +405,61 @@ def generate_code():
         )
 
         if error:
-            # Upstream provider errors: return as clean JSON, 502
+            # Attempt fallback to a backup model when enabled
+            try:
+                if bool(app.config.get("ENABLE_FALLBACK", True)):
+                    # Preferred order: keep primary first to preserve selection, then try others
+                    preferred_order = ["openai", "anthropic", "gemini", "huggingface", "local"]
+                    available_ids = _available_model_ids()
+                    candidates = [mid for mid in preferred_order if mid in available_ids and mid != model]
+
+                    # Record the initial upstream error
+                    try:
+                        monitoring_manager.log_error(
+                            "adapter_error",
+                            error or "Unknown adapter error",
+                            {"client_ip": client_ip, "model": model},
+                            request_id=getattr(g, "request_id", None),
+                        )
+                    except Exception:
+                        pass
+
+                    for alt in candidates:
+                        alt_adapter = get_adapter(alt)
+                        if alt_adapter is None:
+                            continue
+                        alt_code, alt_err = alt_adapter.generate(sanitized_prompt)
+                        if alt_err is None and alt_code:
+                            # Log success under the fallback model
+                            try:
+                                monitoring_manager.log_request(
+                                    model=alt,
+                                    prompt_length=len(prompt),
+                                    response_time=time.time() - start_time,
+                                    success=True,
+                                    client_ip=client_ip,
+                                    error=None,
+                                    request_id=getattr(g, "request_id", None),
+                                )
+                            except Exception:
+                                pass
+                            return jsonify({"code": alt_code, "model_used": alt, "fallback_from": model})
+                        else:
+                            # Log each fallback attempt error for visibility
+                            try:
+                                monitoring_manager.log_error(
+                                    "adapter_error",
+                                    alt_err or "Unknown adapter error",
+                                    {"client_ip": client_ip, "model": alt, "fallback_from": model},
+                                    request_id=getattr(g, "request_id", None),
+                                )
+                            except Exception:
+                                pass
+            except Exception:
+                # Never let fallback logic crash the route; proceed to standard error response
+                pass
+
+            # Upstream provider errors: return as clean JSON, 502/500
             status_code = (
                 502
                 if model in {"openai", "huggingface", "anthropic", "gemini"}
