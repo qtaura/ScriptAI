@@ -57,13 +57,19 @@ class OpenAIAdapter(ModelAdapter):
             try:
                 # Older OpenAI SDK exposes exceptions under openai.error
                 if hasattr(openai, "error"):
-                    if isinstance(e, getattr(openai.error, "RateLimitError", Exception)):
+                    if isinstance(
+                        e, getattr(openai.error, "RateLimitError", Exception)
+                    ):
                         return None, "OpenAI rate limit exceeded"
-                    if isinstance(e, getattr(openai.error, "AuthenticationError", Exception)):
+                    if isinstance(
+                        e, getattr(openai.error, "AuthenticationError", Exception)
+                    ):
                         return None, "Invalid OpenAI API key"
                     if isinstance(e, getattr(openai.error, "Timeout", Exception)):
                         return None, "OpenAI API timeout"
-                    if isinstance(e, getattr(openai.error, "APIConnectionError", Exception)):
+                    if isinstance(
+                        e, getattr(openai.error, "APIConnectionError", Exception)
+                    ):
                         return None, f"OpenAI API connection error: {str(e)}"
                     if isinstance(e, getattr(openai.error, "APIError", Exception)):
                         return None, f"OpenAI API error: {str(e)}"
