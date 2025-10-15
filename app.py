@@ -1,4 +1,12 @@
-from flask import Flask, render_template, request, jsonify, Response, g, send_from_directory
+from flask import (
+    Flask,
+    render_template,
+    request,
+    jsonify,
+    Response,
+    g,
+    send_from_directory,
+)
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:  # for type hints only; avoids runtime import issues
