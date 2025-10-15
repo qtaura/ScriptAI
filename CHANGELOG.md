@@ -5,6 +5,15 @@ All notable changes to ScriptAI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Table of Contents
+- [Unreleased](#unreleased)
+- [1.5.0 - Unreleased](#150---unreleased)
+- [1.4.0 - 2025-10-15](#140---2025-10-15)
+- [1.3.0 - 2025-10-14](#130---2025-10-14)
+- [1.2.0 - 2025-10-13](#120---2025-10-13)
+- [1.1.0 - 2025-10-13](#110---2025-10-13)
+- [1.0.0 - 2025-10-11](#100---2025-10-11)
+
 ## [Unreleased]
 
 ### Planned
@@ -96,6 +105,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecations
 - Legacy Jinja-based home page removed from `/`; the SPA is the default UI. The previous `/ui/new` remains as an alias.
+
+<!-- 1.2.0 moved above for chronological order -->
 
 ## [1.1.0] - 2025-10-13
 
