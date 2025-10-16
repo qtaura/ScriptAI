@@ -19,7 +19,7 @@ def get_performance():
 
 @bp.route("/metrics")
 def prometheus_metrics():
-    if generate_latest is None:  # type: ignore[truthy-bool]
+    if generate_latest is None:
         return jsonify({"error": "Prometheus client not installed"}), 500
     return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 

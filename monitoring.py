@@ -12,6 +12,7 @@ from collections import defaultdict, deque
 import logging
 import logging.config
 from logging import LogRecord
+import uuid
 
 
 # Optional TRACE level support for very verbose logging
@@ -340,6 +341,62 @@ class MonitoringManager:
             "Total errors",
             ["error_type"],
         )
+
+    # --- Lightweight request timing/helpers used by the web app ---
+    def now(self) -> float:
+        """High-resolution monotonic timestamp suitable for measuring durations."""
+        return time.perf_counter()
+
+    def since(self, start: Optional[float]) -> float:
+        """Compute elapsed seconds since `start` (if provided)."""
+        try:
+            if start is None:
+                return 0.0
+            return max(0.0, time.perf_counter() - float(start))
+        except Exception:
+            return 0.0
+
+    def new_request_id(self) -> str:
+        """Generate a new request id for correlation across logs/metrics."""
+        return str(uuid.uuid4())
+
+    def observe_request(
+        self,
+        *,
+        method: str,
+        path: str,
+        status: int | str,
+        duration: float,
+    ) -> None:
+        """Observe HTTP request metrics and emit structured log entry.
+
+        This complements model-centric logging with generic HTTP request visibility.
+        """
+        # Prometheus metrics (best-effort)
+        try:
+            if self.request_counter and self.request_latency:
+                self.request_counter.labels(
+                    endpoint=path, method=method, status=str(status)
+                ).inc()
+                self.request_latency.labels(
+                    endpoint=path, method=method, status=str(status)
+                ).observe(float(duration))
+        except Exception:
+            pass
+
+        # Structured log for request performance (optional)
+        try:
+            self.logger.info(
+                "http_request",
+                extra={
+                    "endpoint": path,
+                    "method": method,
+                    "status": status,
+                    "duration": round(float(duration), 4),
+                },
+            )
+        except Exception:
+            pass
 
     def log_request(
         self,

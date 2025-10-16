@@ -7,7 +7,7 @@ side-effects across app and cli modules.
 from __future__ import annotations
 
 import os
-from typing import Optional, Callable
+from typing import Optional, Callable, Any, List
 
 
 def load_env() -> None:
@@ -52,8 +52,45 @@ def get_api_keys() -> dict[str, Optional[str]]:
     return keys
 
 
+def get_cors_config() -> dict[str, Any]:
+    """Return CORS configuration derived from environment.
+
+    Reads `CORS_ORIGINS` as a comma-separated list. Defaults to ["*"].
+    """
+    origins_raw = os.getenv("CORS_ORIGINS")
+    if origins_raw:
+        # Split by comma and strip whitespace
+        items: List[str] = [item.strip() for item in origins_raw.split(",") if item.strip()]
+        return {"origins": items if items else ["*"]}
+    return {"origins": ["*"]}
+
+
+def get_rate_limit_config() -> dict[str, Any]:
+    """Return basic rate limit configuration from environment (optional).
+
+    Supports `RATE_LIMIT_PER_MINUTE` and `RATE_LIMIT_WINDOW_SECONDS`.
+    Provided for compatibility; callers may ignore or override.
+    """
+    cfg: dict[str, Any] = {}
+    per_min = os.getenv("RATE_LIMIT_PER_MINUTE")
+    window = os.getenv("RATE_LIMIT_WINDOW_SECONDS")
+    if per_min is not None:
+        try:
+            cfg["per_minute"] = int(per_min)
+        except Exception:
+            cfg["per_minute"] = per_min
+    if window is not None:
+        try:
+            cfg["window_seconds"] = int(window)
+        except Exception:
+            cfg["window_seconds"] = window
+    return cfg
+
+
 __all__ = [
     "load_env",
     "enable_fallback_default",
     "get_api_keys",
+    "get_cors_config",
+    "get_rate_limit_config",
 ]
