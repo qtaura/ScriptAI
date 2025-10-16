@@ -15,5 +15,10 @@
     { "source": "/assets/:path*",   "destination": "/api/assets/:path*" },
     { "source": "/vite.svg",        "destination": "/api/vite.svg" },
     { "source": "/modelCards.json", "destination": "/api/modelCards.json" }
-  ]
+  ],
+  "functions": {
+    "api/**/*.py": {
+      "runtime": "python3.12"
+    }
+  }
 }
