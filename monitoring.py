@@ -7,7 +7,7 @@ import json
 import time
 import os
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Union
 from collections import defaultdict, deque
 import logging
 import logging.config
@@ -365,7 +365,7 @@ class MonitoringManager:
         *,
         method: str,
         path: str,
-        status: int | str,
+        status: Union[int, str],
         duration: float,
     ) -> None:
         """Observe HTTP request metrics and emit structured log entry.
