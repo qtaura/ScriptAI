@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Table of Contents
 - [Unreleased](#unreleased)
-- [1.6.0 - Unreleased](#160---unreleased)
+- [1.6.0 - 2025-10-16](#160---2025-10-16)
 - [1.5.0 - 2025-10-16](#150---2025-10-16)
 - [1.4.5 - 2025-10-15](#145---2025-10-15)
 - [1.4.0 - 2025-10-15](#140---2025-10-15)
@@ -18,35 +18,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- Ongoing work not yet categorized by release version -->
+<!-- No unreleased changes at this time. -->
+
+## [1.6.0] - 2025-10-16
+
+### Added
+- Data Privacy Mode across backend and CLI. Set `DATA_PRIVACY_MODE=true` to disable file logging and usage stats persistence in the backend (skip `scriptai_stats.json` load/save) while retaining console JSON logs. CLI `--privacy` sets the environment and avoids creating/updating `~/.scriptai/config.json` and `history.json`.
 
 ### Documentation
-- Rewrote README to lead with a clear value proposition and a more professional structure (concise Quickstart, Usage, API, Security & Observability, Configuration, and Development sections).
-- Added “Data Privacy Mode” guidance (no persistence by default; disable file logging with `LOG_TO_FILE=false`).
+- Rewrote README to lead with a clearer value proposition and more professional structure (concise Quickstart, Usage, API, Security & Observability, Configuration, Development).
+- Added Data Privacy Mode guidance documenting `DATA_PRIVACY_MODE` and `--privacy`, and how to disable file logging (`LOG_TO_FILE=false`).
 - Clarified Windows Quickstart and Vercel routing note (`/api/*` in production vs root locally).
 - Preserved existing logo and simplified anchors for better scanability.
 
 ### Fixed
-- Vercel configuration: removed invalid `functions.runtime` from `vercel.json` and rely on Vercel’s built‑in Python runtime selection. This resolves the “Function Runtimes must have a valid version” build error.
-
-### Testing
-#### Added
-- Frontend unit tests using Vitest + React Testing Library (jsdom): initial smoke coverage ensures hero headline, generator section, prompt label, and theme toggle presence.
-- Playwright e2e smoke test runs against the Flask‑served SPA (via `python app.py` in Playwright `webServer`) and asserts root page renders key UI elements.
-- CI updated with separate jobs to run frontend unit tests and Playwright e2e on `ubuntu-latest`; build stage now depends on both.
-
-#### Planned
-- Expand frontend unit tests to cover model selection availability, prompt form behavior, and request/response states.
-- Add integration/e2e tests for `/generate`: successful generation across providers and 429 rate‑limit behavior.
-- CI artifacts for Playwright traces/videos on failures for easier debugging.
-
-### Notes
-- Beginning work toward `1.6.0`; no version bump yet.
-
-## [1.6.0] - Unreleased
-
-### Added
-- Data Privacy Mode: option to disable persistence for sensitive work. Includes guidance to disable file logging via `LOG_TO_FILE=false` and avoid writing local artifacts for privacy-conscious workflows.
+- Vercel configuration: removed invalid `functions.runtime` from `vercel.json` and rely on Vercel’s built‑in Python runtime selection (fixes “Function Runtimes must have a valid version”).
+- Black formatting compliance across Python 3.8/3.9/3.10: adjusted top‑level blank lines in `cli.py` to satisfy Black 23.12.1.
 
 ### Build
 - Remove duplicate `playwright` package from frontend devDependencies; keep `@playwright/test`. Regenerated `frontend/package-lock.json` to resolve conflicts and ensure reproducible `npm ci` in CI.
@@ -65,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Frontend unit and Playwright e2e jobs are unblocked and no longer interfere with each other; Vitest no longer collects e2e specs.
 
 ### Notes
-- Work toward `1.6.0` continues; these test and tooling improvements are part of the release.
+- Planned follow-ups: expand frontend unit tests for model selection/prompt behavior; add integration/e2e tests for `/generate` including provider success and 429 rate‑limits; publish CI artifacts (Playwright traces/videos) on failures.
 
 ## [1.5.0] - 2025-10-16
 
