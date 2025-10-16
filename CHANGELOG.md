@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Build
+- Pin frontend test tooling versions (Vitest/RTL/Playwright) and add `playwright` package; regenerate `frontend/package-lock.json` to ensure `npm ci` is reproducible in CI.
+
 ### Documentation
 - Rewrote README to lead with a clear value proposition and a more professional structure (concise Quickstart, Usage, API, Security & Observability, Configuration, and Development sections).
 - Added “Data Privacy Mode” guidance (no persistence by default; disable file logging with `LOG_TO_FILE=false`).
