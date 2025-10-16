@@ -16,10 +16,5 @@
     { "source": "/assets/:path*",   "destination": "/api/assets/:path*" },
     { "source": "/vite.svg",        "destination": "/api/vite.svg" },
     { "source": "/modelCards.json", "destination": "/api/modelCards.json" }
-  ],
-  "functions": {
-    "api/**/*.py": {
-      "runtime": "vercel-python@3.12"
-    }
-  }
+  ]
 }
