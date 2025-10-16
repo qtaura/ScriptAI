@@ -45,6 +45,18 @@ from monitoring import MonitoringManager
 # Load environment variables
 load_dotenv()
 
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    val = raw.strip().lower()
+    if val in {"1", "true", "yes", "on"}:
+        return True
+    if val in {"0", "false", "no", "off"}:
+        return False
+    return default
+
 # Constants
 VERSION = "0.1.0"
 MAX_HISTORY = 10
@@ -53,6 +65,9 @@ DEFAULT_MAX_TOKENS = 1500
 CONFIG_DIR = os.path.expanduser("~/.scriptai")
 HISTORY_FILE = os.path.join(CONFIG_DIR, "history.json")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
+
+# Global privacy mode flag from environment
+PRIVACY_MODE = _env_bool("DATA_PRIVACY_MODE", False)
 
 # Default to HuggingFace Inference API if OpenAI key not provided
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -389,6 +404,8 @@ class ScriptAICLI:
     def __init__(self):
         self.history = []
         self.last_generated_code = None
+        # Respect privacy mode from environment at runtime
+        self.privacy_mode = _env_bool("DATA_PRIVACY_MODE", False)
         self.config = self._load_config()
         self._setup_directories()
 
@@ -590,6 +607,9 @@ class ScriptAICLI:
 
     def _setup_directories(self):
         """Create necessary directories if they don't exist"""
+        if self.privacy_mode:
+            # No directories created in privacy mode
+            return
         if not os.path.exists(CONFIG_DIR):
             try:
                 os.makedirs(CONFIG_DIR)
@@ -621,8 +641,8 @@ class ScriptAICLI:
         )
         print(f"- GOOGLE_API_KEY: {_key_status('GOOGLE_API_KEY', GOOGLE_API_KEY)}")
 
-        # Ensure config directory exists
-        if not os.path.exists(CONFIG_DIR):
+        # Ensure config directory exists (skip in privacy mode)
+        if not self.privacy_mode and not os.path.exists(CONFIG_DIR):
             try:
                 os.makedirs(CONFIG_DIR)
                 print(f"- Created config directory: {CONFIG_DIR}")
@@ -653,25 +673,31 @@ class ScriptAICLI:
             },
         }
 
-        if not os.path.exists(CONFIG_FILE):
-            try:
-                with open(CONFIG_FILE, "w") as f:
-                    json.dump(default_config, f, indent=2)
-                print(f"- Initialized config file: {CONFIG_FILE}")
-            except OSError as e:
-                print(f"- Warning: Could not initialize config file: {e}")
+        if self.privacy_mode:
+            print("- Privacy mode ON: skipping config file initialization")
         else:
-            print(f"- Config file ready: {CONFIG_FILE}")
+            if not os.path.exists(CONFIG_FILE):
+                try:
+                    with open(CONFIG_FILE, "w") as f:
+                        json.dump(default_config, f, indent=2)
+                    print(f"- Initialized config file: {CONFIG_FILE}")
+                except OSError as e:
+                    print(f"- Warning: Could not initialize config file: {e}")
+            else:
+                print(f"- Config file ready: {CONFIG_FILE}")
 
-        if not os.path.exists(HISTORY_FILE):
-            try:
-                with open(HISTORY_FILE, "w") as f:
-                    json.dump([], f)
-                print(f"- Initialized history file: {HISTORY_FILE}")
-            except OSError as e:
-                print(f"- Warning: Could not initialize history file: {e}")
+        if self.privacy_mode:
+            print("- Privacy mode ON: skipping history file initialization")
         else:
-            print(f"- History file ready: {HISTORY_FILE}")
+            if not os.path.exists(HISTORY_FILE):
+                try:
+                    with open(HISTORY_FILE, "w") as f:
+                        json.dump([], f)
+                    print(f"- Initialized history file: {HISTORY_FILE}")
+                except OSError as e:
+                    print(f"- Warning: Could not initialize history file: {e}")
+            else:
+                print(f"- History file ready: {HISTORY_FILE}")
 
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from file"""
@@ -690,6 +716,9 @@ class ScriptAICLI:
             },
         }
 
+        if self.privacy_mode:
+            return default_config
+
         if not os.path.exists(CONFIG_FILE):
             return default_config
 
@@ -702,6 +731,9 @@ class ScriptAICLI:
 
     def _save_config(self):
         """Save configuration to file"""
+        if self.privacy_mode:
+            print("Privacy mode: not saving config to disk.")
+            return
         try:
             with open(CONFIG_FILE, "w") as f:
                 json.dump(self.config, f, indent=2)
@@ -720,6 +752,9 @@ class ScriptAICLI:
 
     def _save_history(self):
         """Save command history to file"""
+        if self.privacy_mode:
+            # History is kept in-memory only
+            return
         try:
             with open(HISTORY_FILE, "w") as f:
                 json.dump(self.history, f, indent=2)
@@ -728,6 +763,11 @@ class ScriptAICLI:
 
     def _load_history(self):
         """Load command history from file"""
+        if self.privacy_mode:
+            # Start with empty in-memory history
+            self.history = []
+            return
+
         if not os.path.exists(HISTORY_FILE):
             return
 
@@ -1031,6 +1071,11 @@ def main():
         action="store_true",
         help="Enable trace logging (sets LOG_LEVEL=TRACE)",
     )
+    parser.add_argument(
+        "--privacy",
+        action="store_true",
+        help="Enable Data Privacy Mode (no config/history persistence, no file logging)",
+    )
 
     args = parser.parse_args()
 
@@ -1044,6 +1089,12 @@ def main():
         level_name = "INFO"
 
     os.environ["LOG_LEVEL"] = level_name
+
+    # Enable privacy mode if requested
+    if getattr(args, "privacy", False):
+        os.environ["DATA_PRIVACY_MODE"] = "true"
+        # Also force-disable file logging for downstream libs
+        os.environ.setdefault("LOG_TO_FILE", "false")
 
     monitoring = MonitoringManager(enable_metrics=False)
     monitoring.setup_logging()

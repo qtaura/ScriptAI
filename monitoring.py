@@ -1,5 +1,5 @@
 """
-Monitoring and logging utilities for ScriptAI
+    Monitoring and logging utilities for ScriptAI
 Tracks usage, errors, and performance metrics, and exposes Prometheus metrics.
 """
 
@@ -104,11 +104,19 @@ class MonitoringManager:
         self.error_counts: Dict[str, int] = defaultdict(int)
         self.performance_metrics: deque = deque(maxlen=1000)  # Keep last 1000 requests
 
+        # Global data privacy mode: when enabled, disable disk persistence
+        try:
+            _pm = os.getenv("DATA_PRIVACY_MODE", "false").strip().lower()
+            self.privacy_mode = _pm in {"1", "true", "yes", "on"}
+        except Exception:
+            self.privacy_mode = False
+
         # Setup logging
         self.setup_logging()
 
         # Load existing stats if available
-        self.load_stats()
+        if not self.privacy_mode:
+            self.load_stats()
 
         # Initialize Prometheus metrics if available
         # Initialize Prometheus metrics unless disabled
@@ -149,6 +157,13 @@ class MonitoringManager:
             return default
 
         log_to_file = _env_bool("LOG_TO_FILE", True)
+        # Override via privacy mode: disable file logging entirely
+        try:
+            _pm = os.getenv("DATA_PRIVACY_MODE", "false").strip().lower()
+            if _pm in {"1", "true", "yes", "on"}:
+                log_to_file = False
+        except Exception:
+            pass
         env_log_file = os.getenv("LOG_FILE_PATH", self.log_file)
 
         # Detect serverless environments (e.g., Vercel/AWS Lambda) and avoid file logging
@@ -589,6 +604,9 @@ class MonitoringManager:
 
     def save_stats(self):
         """Save statistics to file"""
+        # Skip persistence in privacy mode
+        if getattr(self, "privacy_mode", False):
+            return
         stats_data = {
             "usage_stats": dict(self.usage_stats),
             "error_counts": dict(self.error_counts),
@@ -603,6 +621,9 @@ class MonitoringManager:
 
     def load_stats(self):
         """Load statistics from file"""
+        # Skip disk reads in privacy mode
+        if getattr(self, "privacy_mode", False):
+            return
         try:
             if os.path.exists("scriptai_stats.json"):
                 with open("scriptai_stats.json", "r") as f:
