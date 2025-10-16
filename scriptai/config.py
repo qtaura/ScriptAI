@@ -60,7 +60,9 @@ def get_cors_config() -> dict[str, Any]:
     origins_raw = os.getenv("CORS_ORIGINS")
     if origins_raw:
         # Split by comma and strip whitespace
-        items: List[str] = [item.strip() for item in origins_raw.split(",") if item.strip()]
+        items: List[str] = [
+            item.strip() for item in origins_raw.split(",") if item.strip()
+        ]
         return {"origins": items if items else ["*"]}
     return {"origins": ["*"]}
 
