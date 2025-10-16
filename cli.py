@@ -57,8 +57,7 @@ def _env_bool(name: str, default: bool = False) -> bool:
         return False
     return default
 
-#
-#
+
 # Constants
 VERSION = "0.1.0"
 MAX_HISTORY = 10
