@@ -9,11 +9,13 @@ from __future__ import annotations
 import os
 from typing import Optional, Callable
 
+
 def load_env() -> None:
     """Load environment variables from a .env file if python-dotenv is installed."""
     loader: Optional[Callable[..., bool]] = None
     try:
         from dotenv import load_dotenv as _loader  # local import to avoid globals
+
         loader = _loader
     except Exception:  # pragma: no cover
         loader = None
