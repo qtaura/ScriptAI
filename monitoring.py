@@ -151,6 +151,43 @@ class MonitoringManager:
         log_to_file = _env_bool("LOG_TO_FILE", True)
         env_log_file = os.getenv("LOG_FILE_PATH", self.log_file)
 
+        # Detect serverless environments (e.g., Vercel/AWS Lambda) and avoid file logging
+        def _is_serverless_env() -> bool:
+            try:
+                return any(
+                    os.getenv(name)
+                    for name in (
+                        "VERCEL",
+                        "VERCEL_REGION",
+                        "AWS_LAMBDA_FUNCTION_NAME",
+                        "LAMBDA_TASK_ROOT",
+                    )
+                )
+            except Exception:
+                return False
+
+        is_serverless = _is_serverless_env()
+        if is_serverless:
+            # File system under /var/task is read-only; prefer console logging
+            log_to_file = False
+            # If needed elsewhere, normalize to /tmp for any incidental file ops
+            try:
+                env_log_file = os.path.join("/tmp", os.path.basename(env_log_file))
+            except Exception:
+                # Fallback silently if path ops fail
+                pass
+
+        # Final guard: disable file logging if target directory is not writable
+        def _dir_is_writable(path: str) -> bool:
+            try:
+                directory = os.path.dirname(path) or "."
+                return os.path.isdir(directory) and os.access(directory, os.W_OK)
+            except Exception:
+                return False
+
+        if log_to_file and not _dir_is_writable(env_log_file):
+            log_to_file = False
+
         # Candidate config paths
         candidates: List[str] = []
         env_path = os.getenv("LOGGING_CONFIG")
@@ -248,9 +285,13 @@ class MonitoringManager:
             root.setLevel(log_level)
             root.addHandler(stream_handler)
             if log_to_file:
-                file_handler = logging.FileHandler(env_log_file)
-                file_handler.setFormatter(formatter)
-                root.addHandler(file_handler)
+                try:
+                    file_handler = logging.FileHandler(env_log_file)
+                    file_handler.setFormatter(formatter)
+                    root.addHandler(file_handler)
+                except Exception:
+                    # If file handler fails (e.g., read-only FS), continue with console only
+                    pass
 
         self.logger = logging.getLogger("ScriptAI")
 
