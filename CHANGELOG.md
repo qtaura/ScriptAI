@@ -16,8 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [1.0.0 - 2025-10-11](#100---2025-10-11)
 
 ## [Unreleased]
- 
-Nothing yet.
+
+### Documentation
+- Rewrote README to lead with a clear value proposition and a more professional structure (concise Quickstart, Usage, API, Security & Observability, Configuration, and Development sections).
+- Added “Data Privacy Mode” guidance (no persistence by default; disable file logging with `LOG_TO_FILE=false`).
+- Clarified Windows Quickstart and Vercel routing note (`/api/*` in production vs root locally).
+- Preserved existing logo and simplified anchors for better scanability.
+
+### Fixed
+- Vercel configuration: removed invalid `functions.runtime` from `vercel.json` and rely on Vercel’s built‑in Python runtime selection. This resolves the “Function Runtimes must have a valid version” build error.
+
+### Notes
+- Beginning work toward `1.6.0`; no version bump yet.
 
 ## [1.5.0] - 2025-10-16
 
