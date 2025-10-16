@@ -17,7 +17,7 @@ def create_app(*args: Any, **kwargs: Any):
     migration path to a full factory in future iterations.
     """
     # Lazy import to avoid circular imports during module initialization
-    from app import app as _app  # type: ignore
+    from app import app as _app
 
     return _app
 

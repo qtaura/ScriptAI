@@ -10,7 +10,7 @@ from typing import Any
 
 try:
     # Do not import Limiter globally to avoid optional dependency issues
-    from flask_limiter import Limiter  # type: ignore
+    from flask_limiter import Limiter
     _HAS_LIMITER = True
 except Exception:  # pragma: no cover
     _HAS_LIMITER = False
@@ -25,13 +25,13 @@ def init_limiter(app: Any) -> Any:
         return _NoopLimiter()
 
     # Import inside function to avoid import-time dependency for apps
-    from flask import request  # type: ignore
+    from flask import request
 
     def _rate_key_func() -> str:
         # Prefer X-Forwarded-For if present (behind proxies), else remote_addr
         return request.environ.get("HTTP_X_FORWARDED_FOR", request.remote_addr)  # type: ignore
 
-    return Limiter(key_func=_rate_key_func, app=app, default_limits=["100 per hour"])  # type: ignore
+    return Limiter(key_func=_rate_key_func, app=app, default_limits=["100 per hour"]) 
 
 
 class _NoopLimiter:

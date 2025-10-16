@@ -7,22 +7,24 @@ side-effects across app and cli modules.
 from __future__ import annotations
 
 import os
-from typing import Optional
-
-try:
-    from dotenv import load_dotenv as _load_dotenv
-except Exception:  # pragma: no cover
-    _load_dotenv = None
-
+from typing import Optional, Callable
 
 def load_env() -> None:
     """Load environment variables from a .env file if python-dotenv is installed."""
-    if _load_dotenv is not None:
-        try:
-            _load_dotenv()
-        except Exception:
-            # Never fail app startup due to env loading issues
-            pass
+    loader: Optional[Callable[..., bool]] = None
+    try:
+        from dotenv import load_dotenv as _loader  # local import to avoid globals
+        loader = _loader
+    except Exception:  # pragma: no cover
+        loader = None
+
+    if loader is None:
+        return
+    try:
+        loader()
+    except Exception:
+        # Never fail app startup due to env loading issues
+        pass
 
 
 def _env_bool(name: str, default: bool) -> bool:
