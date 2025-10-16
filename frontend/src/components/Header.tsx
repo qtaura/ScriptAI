@@ -28,6 +28,7 @@ export function Header() {
     { name: "Models", href: "#models" },
     { name: "Generator", href: "#generator" },
     { name: "Features", href: "#features" },
+    { name: "Metrics", href: "#metrics" },
     { name: "Docs", href: "#docs" },
   ];
 

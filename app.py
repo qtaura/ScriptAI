@@ -1,105 +1,24 @@
 from flask import (
-    Flask,
-    render_template,
     request,
     jsonify,
     Response,
     g,
-    send_from_directory,
 )
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:  # for type hints only; avoids runtime import issues
     from flask_limiter import Limiter as LimiterType
-import os
-import requests
 import time
-from dotenv import load_dotenv
-import uuid
 from typing import Optional, Callable
 from model_adapters import get_adapter, available_models
-from security import SecurityManager
-from monitoring import MonitoringManager
-from scriptai.monitoring.prometheus import (
-    generate_latest,
-    CONTENT_TYPE_LATEST,
-)
+from scriptai.web.services.registry import security_manager, monitoring_manager
+from scriptai.web.app import create_app
 
-from scriptai.config import load_env
-
-# Load environment variables
-load_env()
-
-# API Keys
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-
-# Initialize Flask app
-app = Flask(__name__)
-
-# Performance-related config
-app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
-app.config["TEMPLATES_AUTO_RELOAD"] = False
-app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 300
-app.config.setdefault("RATELIMIT_STRICT_TEST", False)
-# Fallback toggle (defaults to enabled unless explicitly disabled)
-from scriptai.config import enable_fallback_default
-
-app.config.setdefault("ENABLE_FALLBACK", enable_fallback_default())
-
-# Initialize security and monitoring
-security_manager = SecurityManager()
-monitoring_manager = MonitoringManager()
+# Initialize Flask app via factory
+app = create_app()
 
 
-# Validate environment on startup (non-fatal, logs only)
-def _validate_environment_on_startup() -> None:
-    try:
-        logger = getattr(monitoring_manager, "logger", None)
-        if logger is None:
-            return
-
-        def _key_status(name: str, key: Optional[str]) -> str:
-            if not key:
-                return "missing"
-            return "ok" if security_manager.validate_api_key(key) else "looks invalid"
-
-        # API keys
-        logger.info(
-            "env_check",
-            extra={
-                "message": "Environment validation",
-                "openai_api_key": _key_status("OPENAI_API_KEY", OPENAI_API_KEY),
-                "huggingface_api_key": _key_status(
-                    "HUGGINGFACE_API_KEY", HUGGINGFACE_API_KEY
-                ),
-            },
-        )
-
-        # SPA assets path
-        spa_index = os.path.join("static", "figmalol", "index.html")
-        if os.path.exists(spa_index):
-            logger.info(
-                "env_check_spa",
-                extra={"message": "SPA assets ready", "path": spa_index},
-            )
-        else:
-            logger.warning(
-                "env_check_spa_missing",
-                extra={
-                    "message": "SPA assets missing; ensure static/figmalol is built",
-                    "path": spa_index,
-                },
-            )
-    except Exception:
-        # Never fail app startup due to validation/logging issues
-        pass
-
-
-# Run validation immediately
-_validate_environment_on_startup()
+## Environment validation is handled in the app factory
 
 # Configure rate limiting (Flask-Limiter) with sane defaults
 from scriptai.web.limiter import init_limiter
@@ -107,205 +26,7 @@ from scriptai.web.limiter import init_limiter
 limiter: Any = init_limiter(app)
 
 
-@app.before_request
-def _start_timer():
-    g._start_time = time.time()
-
-
-@app.before_request
-def _assign_request_id():
-    """Assign a request ID for tracing; use header if provided."""
-    hdr = request.headers.get("X-Request-ID")
-    g.request_id = hdr if isinstance(hdr, str) and hdr.strip() else uuid.uuid4().hex
-
-
-@app.after_request
-def set_security_headers(response):
-    """Apply security headers to all responses"""
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = "no-referrer"
-    # Allow CDN for Prism assets
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; "
-        "script-src 'self' https://cdnjs.cloudflare.com; "
-        "style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
-        "font-src 'self' https://fonts.gstatic.com"
-    )
-    # Record request metrics
-    try:
-        start_time = getattr(g, "_start_time", None)
-        if start_time is not None:
-            duration = time.time() - start_time
-            endpoint = request.path
-            method = request.method
-            status = response.status_code
-            # Use MonitoringManager's Prometheus metrics if available
-            rc = getattr(monitoring_manager, "request_counter", None)
-            rl = getattr(monitoring_manager, "request_latency", None)
-            if rc is not None and rl is not None:
-                rc.labels(endpoint=endpoint, method=method, status=str(status)).inc()
-                rl.labels(endpoint=endpoint, method=method, status=str(status)).observe(
-                    duration
-                )
-    except Exception:
-        pass
-
-    # Propagate request ID to responses for client-side correlation
-    try:
-        req_id = getattr(g, "request_id", None)
-        if isinstance(req_id, str):
-            response.headers["X-Request-ID"] = req_id
-    except Exception:
-        pass
-
-    return response
-
-
-@app.route("/")
-def index():
-    # Serve the new React-built SPA as the main UI
-    return send_from_directory("static/figmalol", "index.html")
-
-
-# Serve the React-built UI (SPA) from static/figmalol
-@app.route("/ui/new")
-def ui_new_index():
-    return send_from_directory("static/figmalol", "index.html")
-
-
-@app.route("/ui/<path:filename>")
-def ui_new_assets(filename: str):
-    # Serve assets referenced relatively by the SPA, e.g., /ui/assets/*
-    return send_from_directory("static/figmalol", filename)
-
-
-# Root-level assets used by the SPA when served from '/'
-@app.route("/assets/<path:filename>")
-def spa_assets(filename: str):
-    return send_from_directory("static/figmalol/assets", filename)
-
-
-@app.route("/vite.svg")
-def spa_vite_svg():
-    return send_from_directory("static/figmalol", "vite.svg")
-
-
-@app.route("/modelCards.json")
-def spa_model_cards():
-    return send_from_directory("static/figmalol", "modelCards.json")
-
-
-@app.route("/models")
-def get_models():
-    """Expose available models for the React UI."""
-    return jsonify(available_models())
-
-
-@app.route("/model-profiles")
-def get_model_profiles():
-    """Expose dynamic model metadata for frontend display.
-
-    Returns a JSON object with a "models" array. Each entry includes:
-    - id, name
-    - speed, quality, cost (categorical labels)
-    - available (bool derived from environment)
-    - badge, icon (UI hints)
-    - features (short list of capabilities)
-    """
-    availability = {
-        "openai": bool(os.getenv("OPENAI_API_KEY")),
-        "huggingface": bool(os.getenv("HUGGINGFACE_API_KEY")),
-        "anthropic": bool(os.getenv("ANTHROPIC_API_KEY")),
-        "gemini": bool(os.getenv("GOOGLE_API_KEY")),
-        "local": True,
-    }
-
-    models = [
-        {
-            "id": "openai",
-            "name": "OpenAI GPT-3.5",
-            "badge": "Recommended",
-            "speed": "Fast",
-            "quality": "High",
-            "cost": "Paid",
-            "icon": "Zap",
-            "features": [
-                "Production-ready code",
-                "Complex algorithms",
-                "Best error handling",
-                "Extensive language support",
-            ],
-            "available": availability["openai"],
-        },
-        {
-            "id": "anthropic",
-            "name": "Anthropic Claude",
-            "badge": "Reliable",
-            "speed": "Fast",
-            "quality": "High",
-            "cost": "Paid",
-            "icon": "Sparkles",
-            "features": [
-                "Strong reasoning",
-                "Safe outputs",
-                "Long context windows",
-                "Great coding assistance",
-            ],
-            "available": availability["anthropic"],
-        },
-        {
-            "id": "gemini",
-            "name": "Google Gemini",
-            "badge": "Powerful",
-            "speed": "Fast",
-            "quality": "High",
-            "cost": "Paid",
-            "icon": "Brain",
-            "features": [
-                "Multi-modal capabilities",
-                "Strong reasoning",
-                "Good code generation",
-                "Google ecosystem integration",
-            ],
-            "available": availability["gemini"],
-        },
-        {
-            "id": "huggingface",
-            "name": "HuggingFace StarCoder",
-            "badge": "Open Source",
-            "speed": "Medium",
-            "quality": "Good",
-            "cost": "Free",
-            "icon": "Clock",
-            "features": [
-                "Good for snippets",
-                "Open source models",
-                "No API costs",
-            ],
-            "available": availability["huggingface"],
-        },
-        {
-            "id": "local",
-            "name": "Local Model",
-            "badge": "Privacy",
-            "speed": "Slow",
-            "quality": "Variable",
-            "cost": "Free",
-            "icon": "DollarSign",
-            "features": [
-                "Offline capability",
-                "Complete privacy",
-                "No API dependencies",
-                "Customizable",
-            ],
-            "available": availability["local"],
-        },
-    ]
-
-    # Preserve order but only include models configured in the system if desired.
-    # For now, return all with availability flags so UI can indicate disabled ones.
-    return jsonify({"models": models, "timestamp": int(time.time())})
+## SPA and models endpoints are now served via blueprints in scriptai.web.routes
 
 
 def generate_with_openai(prompt):
@@ -599,38 +320,7 @@ def get_stats():
     return jsonify(stats)
 
 
-@app.route("/performance")
-def get_performance():
-    """Get performance metrics"""
-    metrics = monitoring_manager.get_performance_metrics()
-    return jsonify(metrics)
-
-
-@app.route("/metrics")
-def prometheus_metrics():
-    """Expose Prometheus metrics in the standard text format."""
-    if generate_latest is None:
-        return jsonify({"error": "Prometheus client not installed"}), 500
-    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
-
-
-@app.route("/metrics-json")
-def get_metrics_json():
-    """Get combined metrics for dashboard as JSON."""
-    return jsonify(
-        {
-            "usage": monitoring_manager.get_usage_stats(hours=24),
-            "performance": monitoring_manager.get_performance_metrics(),
-            "health": monitoring_manager.check_health(),
-        }
-    )
-
-
-@app.route("/security-stats")
-def get_security_stats():
-    """Get security statistics"""
-    stats = security_manager.get_security_stats()
-    return jsonify(stats)
+## Metrics and security endpoints moved to metrics blueprint
 
 
 def main():

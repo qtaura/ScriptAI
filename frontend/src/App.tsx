@@ -7,6 +7,7 @@ import { CodeGenerator } from "./components/CodeGenerator";
 import { Features } from "./components/Features";
 import { DualInterface } from "./components/DualInterface";
 import { Footer } from "./components/Footer";
+import { MetricsPanel } from "./components/MetricsPanel";
 
 export default function App() {
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function App() {
         <HowItWorks />
         <Features />
         <DualInterface />
+        <MetricsPanel />
       </main>
       <Footer />
     </div>

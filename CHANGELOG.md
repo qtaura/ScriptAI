@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Table of Contents
 - [Unreleased](#unreleased)
+- [1.7.0 - Unreleased](#170---unreleased)
 - [1.6.0 - 2025-10-16](#160---2025-10-16)
 - [1.5.0 - 2025-10-16](#150---2025-10-16)
 - [1.4.5 - 2025-10-15](#145---2025-10-15)
@@ -19,6 +20,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 <!-- No unreleased changes at this time. -->
+
+## [1.7.0] - Unreleased
+
+### Teasers
+- Frontend depth: a richer SPA with a dedicated Metrics panel surfacing live usage, performance (avg/p95 latency, RPS), and security signals. Auto‑refreshing data with Prometheus‑backed endpoints.
+- Prism.js syntax highlighting in the Code Generator output with language‑aware loading for crisp, readable code blocks.
+- Navigation polish: a new "Metrics" anchor in the header for quick access; refined generator and dual‑interface sections.
+- Radix UI normalization: move away from version‑suffixed imports across primitives (Tabs, Dialog, Select, Progress, Separator, etc.) for smoother dev bundling.
+- Dev experience: Vite proxy routes for `/metrics-json` and `/security-stats` to the Flask backend; clearer handling when the backend is offline.
+- Observability & security: consistent `X-Request-ID` propagation to the SPA and CSP tightened to safely allow Prism assets.
+- Usability tuning: steadier tabs and layout, improved Generated Output ergonomics (copy/download), and fewer layout shifts.
+
+### Changed — API Directory Structure
+- Introduced an app factory at `scriptai.web.app:create_app` to centralize env loading, security headers, request hooks, and blueprint registration.
+- Added service registry `scriptai/web/services/registry.py` exposing singletons: `security_manager` and `monitoring_manager` for reuse without circular imports.
+- Extracted routes into modular blueprints:
+  - `scriptai.web.routes.metrics`: `/performance`, `/metrics`, `/metrics-json`, `/security-stats`.
+  - `scriptai.web.routes.models`: `/models`, `/model-profiles`.
+  - `scriptai.web.routes.spa`: `/`, `/ui/*`, `/assets/*`, `/vite.svg`, `/modelCards.json` (serves `static/figmalol` assets when available).
+- Refactored `app.py` to use the factory and registry; kept core endpoints (`/generate`, `/health`, `/stats`) and the JSON 429 handler. Removed duplicated security hooks and static/model routes now provided by blueprints.
+- Vercel handlers (`api/index.py`, `api/[...path].py`) continue exporting the same Flask WSGI `app`, so all public API paths remain unchanged. No client-visible route changes.
 
 ## [1.6.0] - 2025-10-16
 

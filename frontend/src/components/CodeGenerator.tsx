@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Textarea } from "./ui/textarea";
@@ -21,6 +21,8 @@ import {
   Check,
   Loader2,
 } from "lucide-react";
+import Prism from "prismjs";
+import "prismjs/themes/prism.css";
 
 export function CodeGenerator() {
   const [prompt, setPrompt] = useState("");
@@ -250,6 +252,44 @@ ORDER BY u.username, p.category;`,
 
   const displayCode = generatedCode || (exampleCode[language as keyof typeof exampleCode] || exampleCode.python);
 
+  const codeRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const lang = (language || "").toLowerCase();
+    const loadLanguage = async () => {
+      try {
+        if (lang === "python") {
+          await import("prismjs/components/prism-python");
+        } else if (lang === "javascript" || lang === "js") {
+          await import("prismjs/components/prism-javascript");
+        } else if (lang === "typescript" || lang === "ts") {
+          await import("prismjs/components/prism-typescript");
+        } else if (lang === "bash" || lang === "sh" || lang === "shell") {
+          await import("prismjs/components/prism-bash");
+        } else if (lang === "sql") {
+          await import("prismjs/components/prism-sql");
+        } else if (lang === "json") {
+          await import("prismjs/components/prism-json");
+        } else if (lang === "go" || lang === "golang") {
+          await import("prismjs/components/prism-go");
+        } else if (lang === "rust" || lang === "rs") {
+          await import("prismjs/components/prism-rust");
+        } else if (lang === "java") {
+          await import("prismjs/components/prism-java");
+        } else if (lang === "csharp" || lang === "cs") {
+          await import("prismjs/components/prism-csharp");
+        }
+      } catch {
+        // ignore missing language component; Prism will fall back
+      } finally {
+        if (codeRef.current) {
+          Prism.highlightElement(codeRef.current);
+        }
+      }
+    };
+    loadLanguage();
+  }, [displayCode, language]);
+
   const examples = [
     "Python function to scrape website data",
     "React component with API pagination",
@@ -446,7 +486,12 @@ ORDER BY u.username, p.category;`,
                   <TabsContent value="code" className="mt-4">
                     <div className="h-[400px] overflow-auto rounded-md border bg-muted/30">
                       <pre className="p-4 text-xs font-mono">
-                        <code>{displayCode}</code>
+                        <code
+                          ref={codeRef as any}
+                          className={`language-${(language || "").toLowerCase()}`}
+                        >
+                          {displayCode}
+                        </code>
                       </pre>
                     </div>
                   </TabsContent>
