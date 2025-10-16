@@ -30,7 +30,21 @@ def init_limiter(app: Any) -> Any:
 
     def _rate_key_func() -> str:
         # Prefer X-Forwarded-For if present (behind proxies), else remote_addr
-        return request.environ.get("HTTP_X_FORWARDED_FOR", request.remote_addr)
+        xff = request.environ.get("HTTP_X_FORWARDED_FOR")
+        if isinstance(xff, str) and xff:
+            first = xff.split(",")[0].strip()
+            if first:
+                return first
+
+        addr = request.remote_addr
+        if isinstance(addr, str) and addr:
+            return addr
+
+        rem = request.environ.get("REMOTE_ADDR")
+        if isinstance(rem, str) and rem:
+            return rem
+
+        return "127.0.0.1"
 
     return Limiter(key_func=_rate_key_func, app=app, default_limits=["100 per hour"])
 
