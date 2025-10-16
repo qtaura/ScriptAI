@@ -320,3 +320,4 @@ def available_models() -> List[Dict[str, Any]]:
         models.append({"id": "gemini", "name": "Google Gemini"})
     models.append({"id": "local", "name": "Local Model (Placeholder)"})
     return models
+#
