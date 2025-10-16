@@ -1,0 +1,22 @@
+{
+  "functions": {
+    "api/*.py": {
+      "runtime": "vercel-python@latest"
+    }
+  },
+  "rewrites": [
+    { "source": "/generate",        "destination": "/api/generate" },
+    { "source": "/models",          "destination": "/api/models" },
+    { "source": "/model-profiles",  "destination": "/api/model-profiles" },
+    { "source": "/metrics",         "destination": "/api/metrics" },
+    { "source": "/metrics-json",    "destination": "/api/metrics-json" },
+    { "source": "/security-stats",  "destination": "/api/security-stats" },
+    { "source": "/health",          "destination": "/api/health" },
+
+    { "source": "/ui/new",          "destination": "/api/ui/new" },
+    { "source": "/ui/:path*",       "destination": "/api/ui/:path*" },
+    { "source": "/assets/:path*",   "destination": "/api/assets/:path*" },
+    { "source": "/vite.svg",        "destination": "/api/vite.svg" },
+    { "source": "/modelCards.json", "destination": "/api/modelCards.json" }
+  ]
+}
