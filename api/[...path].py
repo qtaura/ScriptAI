@@ -25,8 +25,12 @@ except Exception:
 
     _trace = traceback.format_exc()
 
-    def _fallback_app(environ: dict[str, Any], start_response: Callable[..., Any]) -> Iterable[bytes]:
-        body = ("Import error while initializing Flask app:\n\n" + _trace).encode("utf-8")
+    def _fallback_app(
+        environ: dict[str, Any], start_response: Callable[..., Any]
+    ) -> Iterable[bytes]:
+        body = ("Import error while initializing Flask app:\n\n" + _trace).encode(
+            "utf-8"
+        )
         status = "500 Internal Server Error"
         headers = [
             ("Content-Type", "text/plain; charset=utf-8"),
