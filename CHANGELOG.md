@@ -45,6 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.6.0] - Unreleased
 
+### Added
+- Data Privacy Mode: option to disable persistence for sensitive work. Includes guidance to disable file logging via `LOG_TO_FILE=false` and avoid writing local artifacts for privacy-conscious workflows.
+
 ### Build
 - Remove duplicate `playwright` package from frontend devDependencies; keep `@playwright/test`. Regenerated `frontend/package-lock.json` to resolve conflicts and ensure reproducible `npm ci` in CI.
 
