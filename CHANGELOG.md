@@ -26,11 +26,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Vercel configuration: removed invalid `functions.runtime` from `vercel.json` and rely on Vercel’s built‑in Python runtime selection. This resolves the “Function Runtimes must have a valid version” build error.
 
-### Testing (planned)
-- Frontend unit tests with Vitest + React Testing Library (jsdom), focusing on Model selection, prompt form behavior, and theme toggling.
-- End‑to‑end coverage with Playwright across the full stack (Flask‑served SPA): smoke test (`/` mounts), model availability mapping from `/models`, successful generation flow, and 429 rate‑limit path.
-- CI updates to run frontend unit tests and Playwright with artifact uploads (trace/video on failure).
-- Integration tests exercising `/generate` with fallback enabled/disabled to validate cross‑provider behavior.
+### Testing
+#### Added
+- Frontend unit tests using Vitest + React Testing Library (jsdom): initial smoke coverage ensures hero headline, generator section, prompt label, and theme toggle presence.
+- Playwright e2e smoke test runs against the Flask‑served SPA (via `python app.py` in Playwright `webServer`) and asserts root page renders key UI elements.
+- CI updated with separate jobs to run frontend unit tests and Playwright e2e on `ubuntu-latest`; build stage now depends on both.
+
+#### Planned
+- Expand frontend unit tests to cover model selection availability, prompt form behavior, and request/response states.
+- Add integration/e2e tests for `/generate`: successful generation across providers and 429 rate‑limit behavior.
+- CI artifacts for Playwright traces/videos on failures for easier debugging.
 
 ### Notes
 - Beginning work toward `1.6.0`; no version bump yet.
