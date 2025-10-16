@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Table of Contents
 - [Unreleased](#unreleased)
+- [1.6.0 - Unreleased](#160---unreleased)
 - [1.5.0 - 2025-10-16](#150---2025-10-16)
 - [1.4.5 - 2025-10-15](#145---2025-10-15)
 - [1.4.0 - 2025-10-15](#140---2025-10-15)
@@ -17,8 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Build
-- Pin frontend test tooling versions (Vitest/RTL/Playwright) and add `playwright` package; regenerate `frontend/package-lock.json` to ensure `npm ci` is reproducible in CI.
+<!-- Ongoing work not yet categorized by release version -->
 
 ### Documentation
 - Rewrote README to lead with a clear value proposition and a more professional structure (concise Quickstart, Usage, API, Security & Observability, Configuration, and Development sections).
@@ -42,6 +42,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 - Beginning work toward `1.6.0`; no version bump yet.
+
+## [1.6.0] - Unreleased
+
+### Build
+- Remove duplicate `playwright` package from frontend devDependencies; keep `@playwright/test`. Regenerated `frontend/package-lock.json` to resolve conflicts and ensure reproducible `npm ci` in CI.
+
+### Testing
+- Add `window.matchMedia` polyfill in `frontend/src/setupTests.ts` for jsdom to stabilize Vitest.
+- Update `frontend/src/App.test.tsx` to use role-based selectors and scoped queries to avoid duplicate text matches (hero heading “Production Code”, scoped “Prompt” within the generator section).
+- Constrain Vitest to only `src/**/*.{test,spec}.{ts,tsx}` and exclude `e2e/**` to prevent collecting Playwright specs (fixes “test() called in an unexpected context”).
+- Playwright config is ESM-safe: derive directory from `import.meta.url` via `fileURLToPath` and use it for `webServer.cwd` in `frontend/playwright.config.ts`.
+- Stabilize Playwright smoke test selectors in `frontend/e2e/smoke.spec.ts`:
+  - Use hero heading `getByRole('heading', { name: /Production Code/i })` instead of a non-existent “ScriptAI” heading.
+  - Keep generator heading `getByRole('heading', { name: /Try the Code Generator/i })`.
+  - Scope “Prompt” assertion to `#generator` to avoid duplicate matches from the How It Works flow.
+
+### CI
+- Frontend unit and Playwright e2e jobs are unblocked and no longer interfere with each other; Vitest no longer collects e2e specs.
+
+### Notes
+- Work toward `1.6.0` continues; these test and tooling improvements are part of the release.
 
 ## [1.5.0] - 2025-10-16
 
