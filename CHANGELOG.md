@@ -26,6 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Vercel configuration: removed invalid `functions.runtime` from `vercel.json` and rely on Vercel’s built‑in Python runtime selection. This resolves the “Function Runtimes must have a valid version” build error.
 
+### Testing (planned)
+- Frontend unit tests with Vitest + React Testing Library (jsdom), focusing on Model selection, prompt form behavior, and theme toggling.
+- End‑to‑end coverage with Playwright across the full stack (Flask‑served SPA): smoke test (`/` mounts), model availability mapping from `/models`, successful generation flow, and 429 rate‑limit path.
+- CI updates to run frontend unit tests and Playwright with artifact uploads (trace/video on failure).
+- Integration tests exercising `/generate` with fallback enabled/disabled to validate cross‑provider behavior.
+
 ### Notes
 - Beginning work toward `1.6.0`; no version bump yet.
 
