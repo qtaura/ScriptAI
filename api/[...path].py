@@ -8,19 +8,24 @@ To avoid FUNCTION_INVOCATION_FAILED from import-time errors, we guard
 the import and always return a valid WSGI response on failure.
 """
 
+from typing import Any, Callable, Iterable, cast
+
+# Simple WSGI type alias for mypy compatibility
+WSGIApp = Callable[[dict[str, Any], Callable[..., Any]], Iterable[bytes]]
+
 try:
     # Import the Flask WSGI application
     from app import app as _flask_app
 
-    # Expose as `app` for Vercel Python runtime
-    app = _flask_app
+    # Cast Flask instance to WSGI application for consistent typing
+    handler_app: WSGIApp = cast(WSGIApp, _flask_app)
 except Exception:
     # Fallback WSGI app that returns a 500 with the traceback
     import traceback
 
     _trace = traceback.format_exc()
 
-    def app(environ, start_response):
+    def _fallback_app(environ: dict[str, Any], start_response: Callable[..., Any]) -> Iterable[bytes]:
         body = ("Import error while initializing Flask app:\n\n" + _trace).encode("utf-8")
         status = "500 Internal Server Error"
         headers = [
@@ -29,3 +34,8 @@ except Exception:
         ]
         start_response(status, headers)
         return [body]
+
+    handler_app = _fallback_app
+
+# Expose as `app` for Vercel Python runtime with consistent type
+app: WSGIApp = handler_app
