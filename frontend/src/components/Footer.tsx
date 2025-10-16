@@ -166,7 +166,7 @@ export function Footer() {
               © 2025 ScriptAI. Released under MIT License.
             </p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="font-mono">v1.4.0</span>
+              <span className="font-mono">v1.5.0</span>
               <span>•</span>
               <a
                 href="https://github.com/qtaura/ScriptAI"

@@ -10,7 +10,7 @@ export function Hero() {
       <div className="container relative px-4 py-16 md:px-6 md:py-24">
         <div className="mx-auto max-w-3xl text-center">
           <Badge variant="secondary" className="mb-4 font-mono">
-            v1.4.0
+            v1.5.0
           </Badge>
           
           <h1 className="mb-4 text-3xl md:text-5xl leading-tight text-pretty">

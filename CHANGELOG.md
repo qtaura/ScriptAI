@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Table of Contents
 - [Unreleased](#unreleased)
-- [1.5.0 - Unreleased](#150---unreleased)
+- [1.5.0 - 2025-10-16](#150---2025-10-16)
 - [1.4.5 - 2025-10-15](#145---2025-10-15)
 - [1.4.0 - 2025-10-15](#140---2025-10-15)
 - [1.3.0 - 2025-10-14](#130---2025-10-14)
@@ -19,48 +19,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  
 Nothing yet.
 
-## [1.5.0] - Unreleased
-
-> A sneak peek at what’s landing in 1.5.0. Not final yet — details may evolve.
+## [1.5.0] - 2025-10-16
 
 ### Added
+- CLI `benchmark` subcommand to compare models’ average generation time and output characteristics.
 - CLI logging flags: `--verbose`, `--debug`, and `--trace` wired to centralized logging.
-- TRACE logging level for ultra-verbose diagnostics, including `logger.trace(...)` support.
-- Frontend error banners: destructive Alerts for model load/generation errors and misconfigured `modelCards.json` entries.
-- Backend generation fallback: if the selected provider errors, automatically retries with backup models (`openai → anthropic → gemini → huggingface → local`).
- - Backend endpoint `GET /model-profiles` exposes dynamic provider metadata (speed, quality, cost, availability, badges, icons, features) for UI display.
- - Frontend loads model profiles and shows speed/quality/cost within selectors and info panels.
+- TRACE logging level for ultra-verbose diagnostics.
 
 ### Changed
-- Centralized logging honors environment overrides (`LOG_LEVEL`, `LOG_TO_FILE`, `LOG_FILE_PATH`, `LOGGING_CONFIG`).
-- CLI initializes logging but skips Prometheus metrics to avoid duplicate registry entries.
-- Black-compliant formatting adjustments in `monitoring.py` for Python 3.9 CI stability.
- - Vite dev server proxies `/model-profiles` and `/models` to `http://127.0.0.1:5000` for seamless development.
- - UI prioritizes backend profiles and falls back to static `frontend/public/modelCards.json` when unavailable.
+- Web UI version labels updated to `v1.5.0` across Hero and Footer.
+- Centralized logging honors `LOG_LEVEL`, `LOG_TO_FILE`, `LOG_FILE_PATH`, `LOGGING_CONFIG`.
 
 ### Fixed
-- Vite import resolution: replace `class-variance-authority@0.7.1` with `class-variance-authority` in `frontend/src/components/ui/alert.tsx`.
-- Robust removal of `file` handler from logging configs when `LOG_TO_FILE=false`.
+- Minor CLI argparse naming collision avoided by using a dedicated benchmark prompt arg.
 
 ### Documentation
-- README updated: centralized logging controls, JSON config example, and new CLI flags.
-- Fallback system documented (response fields `model_used`/`fallback_from`; toggle via `ENABLE_FALLBACK`).
- - README updated: Key endpoints include `/model-profiles`; Dynamic Model Registry describes backend-driven profiles and fallback; brief API structure added.
+- README updated with benchmark usage examples and options.
 
-### Teasers
-- Subtle quality-of-life upgrades: toast notifications, centralized error registry, and improved offline mode for CLI.
-- Better artifact handling for generated code (save/export and diff hints).
-- Multi-remote push ergonomics to smooth out origin/upstream workflows.
-
-### Planned
-- User authentication and role-based access controls
-- Cloud-based snippet storage with versioning
-- Team collaboration features (shared projects, permissions)
-- Public API and API keys for third-party integration
-- Advanced analytics and reporting dashboards
-- Plugin system for custom model adapters
-- Redis-backed Flask-Limiter for distributed rate limiting
-- CLI rate limiting and improved offline mode documentation
+### Notes
+- Providers without configured API keys are skipped during benchmarking; invalid keys report clear errors.
+ 
 
 ## [1.4.5] - 2025-10-15
 

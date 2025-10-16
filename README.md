@@ -176,6 +176,15 @@ Direct command
 python cli.py "Create a Python quicksort" --model openai --file quicksort.py
 ```
 
+Benchmark
+```
+# When installed: scriptai benchmark "Write a Python function to compute factorial" --models all --iterations 3 --json
+# From source:     python cli.py benchmark "Write a Python function to compute factorial" --models all --iterations 3 --json
+```
+- Compares average generation time across selected models; skips unavailable providers.
+- Options: `--models openai,huggingface,anthropic,gemini,local | all`, `--iterations N`, `--json`, `--save-csv path.csv`.
+- Availability is based on environment variables: `OPENAI_API_KEY`, `HUGGINGFACE_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`; `local` is always available.
+
 Options
 - `--model` (`openai|huggingface|anthropic|gemini|local`)
 - `--file`  save output to file

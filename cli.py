@@ -25,6 +25,8 @@ import argparse
 import os
 import sys
 import json
+import time
+from statistics import mean
 
 try:
     import readline
@@ -453,6 +455,139 @@ class ScriptAICLI:
             ),
         }
 
+    def _model_is_available(self, model_name: str) -> bool:
+        """Check if a model can be used based on configured credentials.
+        Local is always available; remote providers require API keys.
+        """
+        name = (model_name or "").strip().lower()
+        if name == "local":
+            return True
+        if name == "openai":
+            return bool(OPENAI_API_KEY)
+        if name == "huggingface":
+            return bool(HUGGINGFACE_API_KEY)
+        if name == "anthropic":
+            return bool(ANTHROPIC_API_KEY)
+        if name == "gemini":
+            return bool(GOOGLE_API_KEY)
+        return False
+
+    def run_benchmark(
+        self,
+        prompt: str,
+        models: List[str],
+        iterations: int = 1,
+        output_json: bool = False,
+        save_csv: Optional[str] = None,
+    ) -> None:
+        """Benchmark multiple models: measure time and output characteristics.
+
+        - Skips unavailable models (missing API keys) with a note.
+        - Runs each model `iterations` times and reports average duration.
+        - Prints a compact summary table and optionally JSON/CSV outputs.
+        """
+        sel_models: List[str] = []
+        for m in models:
+            m_norm = m.strip().lower()
+            if m_norm in self.generators:
+                sel_models.append(m_norm)
+            elif m_norm == "all":
+                sel_models = list(self.generators.keys())
+                break
+
+        if not sel_models:
+            print("No valid models selected.")
+            return
+
+        results: List[Dict[str, Any]] = []
+        for model in sel_models:
+            if not self._model_is_available(model):
+                results.append(
+                    {
+                        "model": model,
+                        "available": False,
+                        "error": "missing API key",
+                    }
+                )
+                continue
+
+            gen = self.generators.get(model)
+            if not gen:
+                results.append(
+                    {"model": model, "available": False, "error": "not loaded"}
+                )
+                continue
+
+            durations: List[float] = []
+            outputs: List[str] = []
+            errors: List[str] = []
+            for i in range(max(1, iterations)):
+                start = time.perf_counter()
+                code, err = gen.generate(prompt)
+                end = time.perf_counter()
+                durations.append(end - start)
+                if err:
+                    errors.append(str(err))
+                outputs.append(code or "")
+
+            avg_ms = round(mean(durations) * 1000.0, 2)
+            out_len = len(outputs[-1]) if outputs else 0
+            results.append(
+                {
+                    "model": model,
+                    "available": True,
+                    "iterations": max(1, iterations),
+                    "avg_ms": avg_ms,
+                    "last_output_len": out_len,
+                    "had_error": bool(errors),
+                    "error": errors[-1] if errors else None,
+                }
+            )
+
+        # Print summary table
+        print("\nBenchmark Summary:")
+        print("=" * 80)
+        header = f"{'Model':<12} {'Avail':<6} {'Iters':<5} {'Avg ms':<8} {'Out len':<8} {'Error':<6}"
+        print(header)
+        print("-" * 80)
+        for r in results:
+            print(
+                f"{r['model']:<12} {str(r['available']):<6} {str(r.get('iterations', 0)):<5} "
+                f"{str(r.get('avg_ms', 'n/a')):<8} {str(r.get('last_output_len', 0)):<8} "
+                f"{str(r.get('had_error', False)):<6}"
+            )
+        print("=" * 80)
+
+        # Optional JSON output
+        if output_json:
+            print("\nJSON:")
+            print(json.dumps({"prompt": prompt, "results": results}, indent=2))
+
+        # Optional CSV save
+        if save_csv:
+            try:
+                import csv
+
+                with open(save_csv, "w", newline="", encoding="utf-8") as f:
+                    w = csv.DictWriter(
+                        f,
+                        fieldnames=[
+                            "model",
+                            "available",
+                            "iterations",
+                            "avg_ms",
+                            "last_output_len",
+                            "had_error",
+                            "error",
+                        ],
+                    )
+                    w.writeheader()
+                    for r in results:
+                        w.writerow(r)
+                print(f"Saved CSV benchmark results to: {save_csv}")
+            except Exception as e:
+                print(f"Failed to save CSV: {e}")
+
     def _setup_directories(self):
         """Create necessary directories if they don't exist"""
         if not os.path.exists(CONFIG_DIR):
@@ -814,6 +949,43 @@ def main():
         ),
     )
 
+    subparsers = parser.add_subparsers(dest="command")
+    bench = subparsers.add_parser(
+        "benchmark",
+        help="Benchmark multiple models and compare average generation time",
+        description=(
+            "Run a benchmark that measures average generation time across models. "
+            "Skips unavailable providers gracefully."
+        ),
+    )
+    bench.add_argument(
+        "bench_prompt",
+        metavar="prompt",
+        help="Prompt to use for benchmarking",
+    )
+    bench.add_argument(
+        "--models",
+        default="all",
+        help=(
+            "Comma-separated model list (openai,huggingface,anthropic,gemini,local) or 'all'"
+        ),
+    )
+    bench.add_argument(
+        "--iterations",
+        type=int,
+        default=1,
+        help="Number of runs per model to average",
+    )
+    bench.add_argument(
+        "--json",
+        action="store_true",
+        help="Print JSON results in addition to the table",
+    )
+    bench.add_argument(
+        "--save-csv",
+        help="Path to save CSV results",
+    )
+
     parser.add_argument(
         "prompt", nargs="?", help="The prompt describing the code you want to generate"
     )
@@ -877,6 +1049,18 @@ def main():
     monitoring.setup_logging()
 
     cli = ScriptAICLI()
+
+    # Subcommand: benchmark
+    if getattr(args, "command", None) == "benchmark":
+        model_list = [m.strip() for m in (getattr(args, "models", "all") or "all").split(",")]
+        cli.run_benchmark(
+            prompt=getattr(args, "bench_prompt", ""),
+            models=model_list,
+            iterations=int(getattr(args, "iterations", 1) or 1),
+            output_json=bool(getattr(args, "json", False)),
+            save_csv=getattr(args, "save_csv", None),
+        )
+        return
 
     # Set the model from command line argument; validate and recover gracefully
     if args.model:
