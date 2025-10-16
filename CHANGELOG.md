@@ -25,6 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Data Privacy Mode across backend and CLI. Set `DATA_PRIVACY_MODE=true` to disable file logging and usage stats persistence in the backend (skip `scriptai_stats.json` load/save) while retaining console JSON logs. CLI `--privacy` sets the environment and avoids creating/updating `~/.scriptai/config.json` and `history.json`.
 
+### Changed
+- Backend modularization (reducing complexity/coupling):
+  - Scaffolded `scriptai` package with `config`, `monitoring`, and `web` modules.
+  - Extracted Prometheus helpers to `scriptai.monitoring.prometheus` and wired `/metrics` to it.
+  - Extracted rate limiter initialization to `scriptai.web.limiter` to avoid circulars and hard deps.
+  - Centralized env/config helpers in `scriptai.config` (loads `.env`, computes `ENABLE_FALLBACK`).
+  - Introduced a minimal `scriptai.create_app()` shim to enable a future app factory.
+
 ### Documentation
 - Rewrote README to lead with a clearer value proposition and more professional structure (concise Quickstart, Usage, API, Security & Observability, Configuration, Development).
 - Added Data Privacy Mode guidance documenting `DATA_PRIVACY_MODE` and `--privacy`, and how to disable file logging (`LOG_TO_FILE=false`).

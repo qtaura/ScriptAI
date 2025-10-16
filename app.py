@@ -20,24 +20,15 @@ from typing import Optional, Callable
 from model_adapters import get_adapter, available_models
 from security import SecurityManager
 from monitoring import MonitoringManager
+from scriptai.monitoring.prometheus import (
+    generate_latest,
+    CONTENT_TYPE_LATEST,
+)
 
-# Prometheus client (optional)
-generate_latest: Optional[Callable[[], bytes]]
-CONTENT_TYPE_LATEST: str
-try:
-    from prometheus_client import (
-        generate_latest as _generate_latest,
-        CONTENT_TYPE_LATEST as _CONTENT_TYPE_LATEST,
-    )
-
-    generate_latest = _generate_latest
-    CONTENT_TYPE_LATEST = _CONTENT_TYPE_LATEST
-except ImportError:  # pragma: no cover
-    generate_latest = None
-    CONTENT_TYPE_LATEST = "text/plain; charset=utf-8"
+from scriptai.config import load_env
 
 # Load environment variables
-load_dotenv()
+load_env()
 
 # API Keys
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -54,10 +45,9 @@ app.config["TEMPLATES_AUTO_RELOAD"] = False
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 300
 app.config.setdefault("RATELIMIT_STRICT_TEST", False)
 # Fallback toggle (defaults to enabled unless explicitly disabled)
-app.config.setdefault(
-    "ENABLE_FALLBACK",
-    os.getenv("ENABLE_FALLBACK", "true").strip().lower() in ("1", "true", "yes"),
-)
+from scriptai.config import enable_fallback_default
+
+app.config.setdefault("ENABLE_FALLBACK", enable_fallback_default())
 
 # Initialize security and monitoring
 security_manager = SecurityManager()
@@ -112,31 +102,9 @@ def _validate_environment_on_startup() -> None:
 _validate_environment_on_startup()
 
 # Configure rate limiting (Flask-Limiter) with sane defaults
-limiter: Any
-try:
-    from flask_limiter import Limiter
+from scriptai.web.limiter import init_limiter
 
-    _has_limiter = True
-except Exception:  # pragma: no cover
-    _has_limiter = False
-
-if _has_limiter:
-
-    def _rate_key_func():
-        # Prefer X-Forwarded-For if present (behind proxies), else remote_addr
-        return request.environ.get("HTTP_X_FORWARDED_FOR", request.remote_addr)
-
-    limiter = Limiter(key_func=_rate_key_func, app=app, default_limits=["100 per hour"])
-else:
-
-    class _NoopLimiter:
-        def limit(self, *args, **kwargs):
-            def _wrap(f):
-                return f
-
-            return _wrap
-
-    limiter = _NoopLimiter()
+limiter: Any = init_limiter(app)
 
 
 @app.before_request
