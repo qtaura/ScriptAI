@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/",               "destination": "/api/ui/new" },
+    { "source": "/index.html",     "destination": "/api/ui/new" },
     { "source": "/generate",        "destination": "/api/generate" },
     { "source": "/models",          "destination": "/api/models" },
     { "source": "/model-profiles",  "destination": "/api/model-profiles" },
