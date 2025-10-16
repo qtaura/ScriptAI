@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
-import path from 'path'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+// __dirname is not available in ESM; derive it from import.meta.url
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   testDir: './e2e',
@@ -12,7 +16,7 @@ export default defineConfig({
   },
   webServer: {
     command: 'python app.py',
-    cwd: path.resolve(__dirname, '..'),
+    cwd: resolve(__dirname, '..'),
     url: 'http://127.0.0.1:5000',
     reuseExistingServer: true,
     timeout: 120_000,
