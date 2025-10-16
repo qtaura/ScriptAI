@@ -63,3 +63,33 @@ html, body, #root {
 
 /* Apply global background/text from tokens */
 body { background-color: hsl(var(--background)); color: hsl(var(--foreground)); }
+
+/* Subtle scroll hint when content overflows */
+@keyframes gentle-scroll-hint {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+  100% { transform: translateY(0); }
+}
+
+.animate-scroll-hint {
+  animation: gentle-scroll-hint 1200ms ease-in-out 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-scroll-hint {
+    animation: none;
+  }
+}
+
+/* Carousel page fade-in */
+@keyframes page-fade {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.page-fade-enter {
+  animation: page-fade 380ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-fade-enter { animation: none; }
+}

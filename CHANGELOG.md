@@ -82,13 +82,21 @@ Nothing yet.
 - JSON structured logging formatter emitting compact, machine-parseable logs with `request_id`.
 - Request ID middleware: honors `X-Request-ID` header or generates a UUID when absent; echoes header in responses.
 - Monitoring logs now include `request_id` and model labels for end-to-end traceability.
+- Animated hover effects for model cards (background glow, badge, and icon transitions).
 
 ### Changed
 - Standardized logging across the app to structured JSON for consistency and easier ingestion.
+- ModelComparison UI reworked: replaced scrollbar overflow with an auto-paging carousel (4–6 cards per page depending on viewport).
+- Added page fade transitions for carousel; autoplay advances every 5s and pauses on hover.
+- Grid adapts to screen width (4 cards on small screens, 6 on large).
+- UI version labels updated to `v1.4.0` across Hero and Footer.
 
 ### Fixed
 - Removed unused `type: ignore` in `monitoring.py` to satisfy MyPy on py311.
 - Black formatting compliance: added blank line before nested `JSONFormatter` class.
+
+### Accessibility
+- Carousel and hover animations respect `prefers-reduced-motion` and reduce/disable motion accordingly.
 
 ### Security
 - Verified `.env` is gitignored and repository contains no committed API keys (`sk-`/`api_key` patterns clean).

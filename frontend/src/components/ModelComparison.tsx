@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Check } from "lucide-react";
@@ -21,6 +21,42 @@ type ModelCardConfig = {
 export function ModelComparison() {
   const [models, setModels] = useState<ModelCardConfig[]>([]);
   const [configError, setConfigError] = useState<string>("");
+  const [pageSize, setPageSize] = useState<number>(6);
+  const [pageIndex, setPageIndex] = useState<number>(0);
+  const [paused, setPaused] = useState<boolean>(false);
+
+  // Adapt page size to viewport (two rows: 4 on small screens, 6 on large)
+  useEffect(() => {
+    const updateSize = () => {
+      const lg = window.matchMedia("(min-width: 1024px)").matches;
+      setPageSize(lg ? 6 : 4);
+    };
+    updateSize();
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const handler = () => updateSize();
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const pages = useMemo(() => {
+    const list = Array.isArray(models) ? models : [];
+    const result: ModelCardConfig[][] = [];
+    for (let i = 0; i < list.length; i += pageSize) {
+      result.push(list.slice(i, i + pageSize));
+    }
+    return result.length ? result : [list];
+  }, [models, pageSize]);
+
+  // Auto-advance pages without scrollbars
+  useEffect(() => {
+    if ((pages?.length || 0) <= 1) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const interval = window.setInterval(() => {
+      if (paused || reduce) return;
+      setPageIndex((i) => ((i + 1) % pages.length));
+    }, 5000);
+    return () => window.clearInterval(interval);
+  }, [pages, paused]);
 
   useEffect(() => {
     // Prefer backend dynamic profiles; fallback to public/modelCards.json
@@ -199,28 +235,38 @@ export function ModelComparison() {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div
+          className="relative"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+        >
+          <div key={pageIndex} className="page-fade-enter grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
           {configError && (
-            <div className="md:col-span-3">
+            <div className="col-span-full">
               <Alert variant="destructive">
                 <AlertTitle>Model Cards Error</AlertTitle>
                 <AlertDescription>{configError}</AlertDescription>
               </Alert>
             </div>
           )}
-          {models.map((model, index) => {
+          {(pages[pageIndex] || models).map((model, index) => {
             const Icon = getIcon(model.icon);
             return (
-              <Card key={index} className="relative overflow-hidden transition-shadow hover:shadow-md">
-                <div className={`absolute top-0 right-0 h-24 w-24 ${model.bgColor} blur-3xl`} />
+              <Card
+                key={index}
+                className="group relative overflow-hidden transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:border-primary/30"
+              >
+                <div
+                  className={`pointer-events-none absolute -top-6 -right-6 h-32 w-32 ${model.bgColor} opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-80`}
+                />
                 <CardHeader>
                   <div className="mb-2">
-                    <Badge variant="secondary" className="mb-2">
+                    <Badge variant="secondary" className="mb-2 transition-colors duration-300 group-hover:bg-secondary/40">
                       {model.badge}
                     </Badge>
                   </div>
                   <CardTitle className="flex items-center gap-2">
-                    <Icon className={`h-5 w-5 ${model.color}`} />
+                    <Icon className={`h-5 w-5 ${model.color} transition-transform duration-300 group-hover:scale-110`} />
                     {model.name}
                   </CardTitle>
                 </CardHeader>
@@ -251,6 +297,7 @@ export function ModelComparison() {
               </Card>
             );
           })}
+          </div>
         </div>
       </div>
     </section>
