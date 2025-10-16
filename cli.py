@@ -1052,7 +1052,10 @@ def main():
 
     # Subcommand: benchmark
     if getattr(args, "command", None) == "benchmark":
-        model_list = [m.strip() for m in (getattr(args, "models", "all") or "all").split(",")]
+        model_list = [
+            m.strip()
+            for m in (getattr(args, "models", "all") or "all").split(",")
+        ]
         cli.run_benchmark(
             prompt=getattr(args, "bench_prompt", ""),
             models=model_list,
