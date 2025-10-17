@@ -120,6 +120,50 @@ def _available_model_ids() -> list:
     return ["local"]
 
 
+def _is_truthy(val: object) -> bool:
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, (int, float)):
+        return bool(val)
+    if isinstance(val, str):
+        return val.strip().lower() in {"1", "true", "yes", "on"}
+    return False
+
+
+def _smart_route_model(prompt: str, available: list[str]) -> tuple[str, str, list[str]]:
+    """Choose a model based on prompt characteristics and availability.
+
+    Returns (chosen_model, reason, ranked_candidates).
+    """
+    p = prompt.lower()
+    length = len(p)
+
+    # Language/topic hints
+    is_python = any(k in p for k in ["python", "pandas", "fastapi", "def "])
+    is_js = any(k in p for k in ["react", "javascript", "node", "function "])
+    is_sql = any(k in p for k in ["sql", "select ", " from ", " where "])
+
+    # Simple priority lists by scenario
+    long_prompt = length > 500
+    if long_prompt:
+        # Prefer models known for larger context windows first
+        preference = ["anthropic", "gemini", "openai", "huggingface", "local"]
+        reason = "long prompt; prioritize larger-context providers"
+    elif is_js:
+        preference = ["openai", "gemini", "anthropic", "huggingface", "local"]
+        reason = "javascript/react hints; prioritize OpenAI/Gemini"
+    elif is_python or is_sql:
+        preference = ["openai", "anthropic", "huggingface", "gemini", "local"]
+        reason = "python/sql hints; prioritize OpenAI/Anthropic"
+    else:
+        preference = ["openai", "anthropic", "gemini", "huggingface", "local"]
+        reason = "general prompt; default provider order"
+
+    candidates = [m for m in preference if m in set(available)]
+    chosen = candidates[0] if candidates else "local"
+    return chosen, reason, candidates
+
+
 # JSON handler for 429 Too Many Requests
 @app.errorhandler(429)
 def _handle_rate_limit(e):  # pragma: no cover (exercised via tests)
@@ -154,6 +198,9 @@ def generate_code():
 
         prompt = data.get("prompt")
         model = data.get("model", "openai")
+        debug = _is_truthy(data.get("debug")) or _is_truthy(
+            request.args.get("debug")
+        ) or _is_truthy(request.headers.get("X-Debug-Decision"))
 
         if not isinstance(prompt, str):
             return _json_error("'prompt' must be a string", 400)
@@ -182,17 +229,33 @@ def generate_code():
         # Sanitize input before passing to model adapters
         sanitized_prompt = security_manager.sanitize_input(prompt)
 
-        # Generate code based on selected model using adapters
-        adapter = get_adapter(model)
+        # Determine model: support explainable smart routing when model == "auto"
+        router_info = None
+        selected_model = model
+        if model == "auto":
+            available_ids = _available_model_ids()
+            chosen, reason, ranked = _smart_route_model(sanitized_prompt, available_ids)
+            selected_model = chosen
+            if debug:
+                router_info = {
+                    "mode": "auto",
+                    "chosen": chosen,
+                    "reason": reason,
+                    "candidates": ranked,
+                    "available": available_ids,
+                }
+
+        # Generate code based on selected/explicit model using adapters
+        adapter = get_adapter(selected_model)
         if adapter is None:
-            return _json_error(f"Unknown model: {model}", 400)
+            return _json_error(f"Unknown model: {selected_model}", 400)
         code, error = adapter.generate(sanitized_prompt)
 
         response_time = time.time() - start_time
 
         # Log the request
         monitoring_manager.log_request(
-            model=model,
+            model=selected_model,
             prompt_length=len(prompt),
             response_time=response_time,
             success=error is None,
@@ -217,7 +280,7 @@ def generate_code():
                     candidates = [
                         mid
                         for mid in preferred_order
-                        if mid in available_ids and mid != model
+                        if mid in available_ids and mid != selected_model
                     ]
 
                     # Record the initial upstream error
@@ -225,7 +288,7 @@ def generate_code():
                         monitoring_manager.log_error(
                             "adapter_error",
                             error or "Unknown adapter error",
-                            {"client_ip": client_ip, "model": model},
+                            {"client_ip": client_ip, "model": selected_model},
                             request_id=getattr(g, "request_id", None),
                         )
                     except Exception:
@@ -266,7 +329,7 @@ def generate_code():
                                     {
                                         "client_ip": client_ip,
                                         "model": alt,
-                                        "fallback_from": model,
+                                    "fallback_from": selected_model,
                                     },
                                     request_id=getattr(g, "request_id", None),
                                 )
@@ -279,12 +342,18 @@ def generate_code():
             # Upstream provider errors: return as clean JSON, 502/500
             status_code = (
                 502
-                if model in {"openai", "huggingface", "anthropic", "gemini"}
+                if selected_model in {"openai", "huggingface", "anthropic", "gemini"}
                 else 500
             )
             return _json_error(error, status_code)
 
-        return jsonify({"code": code})
+        body: dict[str, Any] = {"code": code}
+        # Include model_used when auto-selected or when debug requested
+        if model == "auto" or debug:
+            body["model_used"] = selected_model
+        if router_info is not None:
+            body["router"] = router_info
+        return jsonify(body)
 
     except Exception as e:
         response_time = time.time() - start_time

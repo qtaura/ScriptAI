@@ -68,6 +68,11 @@ Notes
 - First‑class observability: structured logs with `X‑Request‑ID`, Prometheus `/metrics`, and health/stats endpoints.
 - Web, API, and CLI — use it your way.
 
+### Differentiator: Explainable Smart Model Router
+- Use `model: "auto"` to let the backend choose the best available provider based on prompt characteristics (length, language hints) and configured credentials.
+- Add `"debug": true` in the request body (or `?debug=1` or header `X‑Debug‑Decision: 1`) to receive a human‑readable explanation and ranked candidates.
+- Keeps your responses flowing with the existing fallback chain if the primary provider errors.
+
 ## Usage
 
 ### Web (SPA)
@@ -107,6 +112,24 @@ Endpoints
   - Response:
     ```json
     { "code": "# generated code ...", "model_used": "openai" }
+    ```
+  - Auto‑routing example:
+    ```json
+    { "prompt": "Write a Python function to diff two dicts", "model": "auto", "debug": true }
+    ```
+    Response (truncated):
+    ```json
+    {
+      "code": "def diff_dicts(a, b): ...",
+      "model_used": "openai",
+      "router": {
+        "mode": "auto",
+        "chosen": "openai",
+        "reason": "python/sql hints; prioritize OpenAI/Anthropic",
+        "candidates": ["openai", "anthropic", "huggingface", "gemini", "local"],
+        "available": ["local", "openai"]
+      }
+    }
     ```
 - `GET /health` — Health check.
 - `GET /metrics` — Prometheus metrics (text exposition format).

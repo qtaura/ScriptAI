@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- No unreleased changes at this time. -->
+### Added
+- Explainable Smart Model Router: use `model: "auto"` to automatically select a provider based on prompt characteristics and availability. Include `debug=true` (or `?debug=1` / `X-Debug-Decision: 1`) to receive the routing rationale and ranked candidates in the response. Monitoring logs attribute usage to the selected provider, and existing fallback behavior applies on upstream errors.
 
 ## [1.7.0] - Unreleased
 
