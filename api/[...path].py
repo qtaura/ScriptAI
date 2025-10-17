@@ -8,6 +8,8 @@ To avoid FUNCTION_INVOCATION_FAILED from import-time errors, we guard
 the import and always return a valid WSGI response on failure.
 """
 
+from __future__ import annotations
+
 from typing import Any, Callable, Iterable, cast
 
 # Simple WSGI type alias for mypy compatibility
