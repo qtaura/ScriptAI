@@ -105,7 +105,7 @@ class SessionLogger:
 
     def start(
         self, label: Optional[str] = None, model: Optional[str] = None
-    ) -> Optional[str>:
+    ) -> Optional[str]:
         if self.privacy_mode:
             return None
         if not self.session_dir:
