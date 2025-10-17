@@ -1,4 +1,4 @@
-import unittest
+﻿import unittest
 import json
 import sys
 import os
@@ -331,39 +331,39 @@ class TestApp(unittest.TestCase):
 
     def test_sanitize_script_tag_removed(self):
         from scriptai.web.services.registry import security_manager
-    
+
         s = "<script>alert('x')</script> Hello"
         sanitized = security_manager.sanitize_input(s)
         self.assertNotIn("<script", sanitized.lower())
         self.assertNotIn("</script>", sanitized.lower())
-    
+
     def test_sanitize_javascript_url_removed(self):
         from scriptai.web.services.registry import security_manager
-    
+
         s = "javascript:alert(1)"
         sanitized = security_manager.sanitize_input(s)
         self.assertNotIn("javascript:", sanitized.lower())
-    
+
     def test_sanitize_html_escape_basic(self):
         from scriptai.web.services.registry import security_manager
-    
+
         s = "<b>bold</b> & \"quoted\""
         sanitized = security_manager.sanitize_input(s)
         # Escaped brackets and ampersand should be present
         self.assertIn("&lt;b&gt;bold&lt;/b&gt;", sanitized)
         self.assertIn("&amp;", sanitized)
         self.assertIn("&quot;", sanitized)
-    
+
     def test_validate_prompt_event_handler_blocked(self):
         from scriptai.web.services.registry import security_manager
-    
+
         is_valid, err = security_manager.validate_prompt("onclick=alert(1)")
         self.assertFalse(is_valid)
         self.assertIsNotNone(err)
-    
+
     def test_sanitize_handles_entity_obfuscation(self):
         from scriptai.web.services.registry import security_manager
-    
+
         s = "java&#115;cript:alert(1)"
         sanitized = security_manager.sanitize_input(s)
         # Ensure entity remains escaped, preventing browser execution if rendered
