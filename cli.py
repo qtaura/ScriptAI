@@ -475,19 +475,20 @@ class ScriptAICLI:
         }
 
         # Initialize per-project session logger (no-op in privacy mode)
+        self.session_logger: Optional[SessionLogger] = None
         try:
             self.session_logger = SessionLogger(privacy_mode=self.privacy_mode)
         except Exception:
-            self.session_logger = None  # type: ignore[assignment]
+            self.session_logger = None
 
         # Start a session after models are ready so we can include default model
         try:
-            if getattr(self, "session_logger", None):
-                self.session_logger.start(label="cli", model=self.current_model)  # type: ignore[attr-defined]
+            if self.session_logger is not None:
+                self.session_logger.start(label="cli", model=self.current_model)
                 # Ensure session end is recorded on process exit
                 import atexit
 
-                atexit.register(lambda: self.session_logger.end(status="completed"))  # type: ignore[attr-defined]
+                atexit.register(lambda: self.session_logger and self.session_logger.end(status="completed"))
         except Exception:
             pass
 
@@ -928,7 +929,7 @@ Any other input will be treated as a prompt for code generation.
                 )
             # Record failed interaction
             try:
-                if getattr(self, "session_logger", None):
+                if self.session_logger is not None:
                     self.session_logger.record_interaction(
                         prompt=prompt,
                         output="",
@@ -946,7 +947,7 @@ Any other input will be treated as a prompt for code generation.
 
         # Record successful interaction
         try:
-            if getattr(self, "session_logger", None):
+            if self.session_logger is not None:
                 self.session_logger.record_interaction(
                     prompt=prompt,
                     output=code or "",
@@ -1012,7 +1013,7 @@ Any other input will be treated as a prompt for code generation.
         self._save_history()
         # Best-effort session end (atexit also registered)
         try:
-            if getattr(self, "session_logger", None):
+            if self.session_logger is not None:
                 self.session_logger.end(status="completed")
         except Exception:
             pass
