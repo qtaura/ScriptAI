@@ -206,3 +206,30 @@ MIT — see [LICENSE](LICENSE).
     <a href="https://github.com/qtaura/ScriptAI/issues">Request Feature</a>
   </p>
 </div>
+
+## Security & Production Hardening
+
+- Rate limiting
+  - Flask-Limiter keys clients by the first IP in `X-Forwarded-For` (XFF) or `remote_addr`.
+  - Server route now normalizes IP the same way, preventing bypass by changing secondary XFF entries.
+  - Caveat: rotating the first IP (or true client IP) resets the bucket. Consider adding user-level keys (e.g., `X-User-Id`) for stricter multi-tenant control.
+
+- Sanitization & validation
+  - `SecurityManager.validate_prompt()` blocks script tags, event handlers (`on*=`), `javascript:`/`vbscript:`, iframes/embeds, and excessive repetition.
+  - `SecurityManager.sanitize_input()` HTML-escapes content and strips script/JS/VB prefixes. HTML entity obfuscation is preserved as escaped text.
+  - Caveat: ScriptAI does not execute generated code; adapters do not validate code outputs for runtime safety. Review outputs and run in trusted environments.
+
+- Adapter security profiles
+  - `OpenAI` — Strong outputs; no execution performed by ScriptAI. Outputs may include network/file/process operations; you must review before running.
+  - `Anthropic` — Similar guarantees; strong reasoning, safe defaults; no output execution.
+  - `Gemini` — Multi-modal; no output execution; treat generated code as untrusted until reviewed.
+  - `HuggingFace` — Open models; variability in output quality; no output execution.
+  - `Local` — Generates stub code only; no external calls. Caveat: does not validate code output; replace stubs carefully.
+
+- Optional auth scaffolding
+  - Set `AUTH_TOKEN` to enable simple token checks for non-GET requests.
+  - Accepts `Authorization: Bearer <token>` or `X-API-Key: <token>`; sets `g.user_id` from `X-User-Id` when present.
+  - Adjust the guard in `scriptai/web/auth.py` to protect GET routes if required.
+
+- Optional request signing
+  - Set `REQUEST_SIGNATURE_SECRET` (or `SIGNING_SECRET`) and send `X-Signature` and `X-Signature-Timestamp` headers. See `security.py` for the HMAC scheme and examples.

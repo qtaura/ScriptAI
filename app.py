@@ -15,6 +15,7 @@ from typing import Optional, Callable
 from model_adapters import get_adapter, available_models
 from scriptai.web.services.registry import security_manager, monitoring_manager
 from scriptai.web.app import create_app
+import os
 
 # Initialize Flask app via factory
 app = create_app()
@@ -190,7 +191,12 @@ def _generate_limit():
 @limiter.limit(_generate_limit)
 def generate_code():
     start_time = time.time()
-    client_ip = request.environ.get("HTTP_X_FORWARDED_FOR", request.remote_addr)
+    # Harden client IP extraction: honor first XFF entry only
+    xff = request.environ.get("HTTP_X_FORWARDED_FOR")
+    if isinstance(xff, str) and xff.strip():
+        client_ip = xff.split(",")[0].strip()
+    else:
+        client_ip = request.remote_addr or request.environ.get("REMOTE_ADDR")
 
     try:
         # Get the prompt and model from the request

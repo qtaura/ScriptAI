@@ -252,3 +252,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Polished README: added Quickstart section, clarified adapter selection and
    testing coverage, and updated Python requirement to 3.9+
  - Documented anti-abuse measures: Flask-Limiter defaults, JSON 429 handler, and CLI notes
+
+## 1.7.0 (Unreleased)
+
+Security & Production Hardening
+- Normalize client IP parsing to the first `X-Forwarded-For` entry, aligning limiter and app logic to prevent rate-limit bypass via secondary IPs.
+- Add tests for XFF-based rate-limit bypass attempts and for sanitization/validation bypasses (script tags, `javascript:` URLs, event handlers, HTML entity obfuscation).
+- Implement optional auth scaffolding gated by `AUTH_TOKEN` for multi-user deployments, with bearer/API key support and optional `X-User-Id` identification.
+- Document adapter security guarantees and caveats in README, and provide guidance on adding auth.
+- Document optional HMAC request signing headers (`X-Signature`, `X-Signature-Timestamp`) using `REQUEST_SIGNATURE_SECRET`.

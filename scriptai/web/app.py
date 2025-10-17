@@ -15,6 +15,7 @@ from scriptai.web.routes.metrics import bp as metrics_bp
 from scriptai.web.routes.models import bp as models_bp
 from scriptai.web.routes.spa import bp as spa_bp
 from scriptai.web.services.registry import monitoring_manager, security_manager
+from scriptai.web.auth import init_auth
 
 
 def _apply_security_headers(response):
@@ -57,6 +58,9 @@ def create_app() -> Flask:
     load_env()
 
     app = Flask(__name__)
+
+    # Initialize optional auth guard (enabled when AUTH_TOKEN is set)
+    init_auth(app)
 
     # Basic config
     app.config.setdefault("JSON_SORT_KEYS", False)

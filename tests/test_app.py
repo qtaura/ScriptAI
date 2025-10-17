@@ -264,6 +264,111 @@ class TestApp(unittest.TestCase):
         body = json.loads(response.data)
         self.assertIn("error", body)
 
+    def test_rate_limit_xff_multiple_ips_uses_first(self):
+        """Limiter key should use first XFF entry; third request 429."""
+        app.config["RATELIMIT_STRICT_TEST"] = True
+        headers = {"X-Forwarded-For": "198.51.100.10, 198.51.100.2"}
+
+        for _ in range(2):
+            r = self.app.post(
+                "/generate",
+                data=json.dumps({"prompt": "x", "model": "local"}),
+                content_type="application/json",
+                headers=headers,
+            )
+            self.assertNotEqual(r.status_code, 429)
+
+        r = self.app.post(
+            "/generate",
+            data=json.dumps({"prompt": "x", "model": "local"}),
+            content_type="application/json",
+            headers=headers,
+        )
+        self.assertEqual(r.status_code, 429)
+
+    def test_rate_limit_xff_change_second_ip_does_not_bypass(self):
+        """Changing second XFF IP should not evade limiter; expect 429 on third."""
+        app.config["RATELIMIT_STRICT_TEST"] = True
+        headers1 = {"X-Forwarded-For": "198.51.100.20, 198.51.100.2"}
+        headers2 = {"X-Forwarded-For": "198.51.100.20, 203.0.113.9"}
+
+        for _ in range(2):
+            r = self.app.post(
+                "/generate",
+                data=json.dumps({"prompt": "x", "model": "local"}),
+                content_type="application/json",
+                headers=headers1,
+            )
+            self.assertNotEqual(r.status_code, 429)
+
+        r = self.app.post(
+            "/generate",
+            data=json.dumps({"prompt": "x", "model": "local"}),
+            content_type="application/json",
+            headers=headers2,
+        )
+        self.assertEqual(r.status_code, 429)
+
+    def test_rate_limit_xff_change_first_ip_resets_bucket(self):
+        """Changing first XFF IP should hit a new bucket and pass."""
+        app.config["RATELIMIT_STRICT_TEST"] = True
+        h1 = {"X-Forwarded-For": "198.51.100.30, 198.51.100.2"}
+        for _ in range(3):
+            self.app.post(
+                "/generate",
+                data=json.dumps({"prompt": "x", "model": "local"}),
+                content_type="application/json",
+                headers=h1,
+            )
+        h2 = {"X-Forwarded-For": "198.51.100.99, 198.51.100.2"}
+        r = self.app.post(
+            "/generate",
+            data=json.dumps({"prompt": "x", "model": "local"}),
+            content_type="application/json",
+            headers=h2,
+        )
+        self.assertNotEqual(r.status_code, 429)
+
+    def test_sanitize_script_tag_removed(self):
+        from scriptai.web.services.registry import security_manager
+    
+        s = "<script>alert('x')</script> Hello"
+        sanitized = security_manager.sanitize_input(s)
+        self.assertNotIn("<script", sanitized.lower())
+        self.assertNotIn("</script>", sanitized.lower())
+    
+    def test_sanitize_javascript_url_removed(self):
+        from scriptai.web.services.registry import security_manager
+    
+        s = "javascript:alert(1)"
+        sanitized = security_manager.sanitize_input(s)
+        self.assertNotIn("javascript:", sanitized.lower())
+    
+    def test_sanitize_html_escape_basic(self):
+        from scriptai.web.services.registry import security_manager
+    
+        s = "<b>bold</b> & \"quoted\""
+        sanitized = security_manager.sanitize_input(s)
+        # Escaped brackets and ampersand should be present
+        self.assertIn("&lt;b&gt;bold&lt;/b&gt;", sanitized)
+        self.assertIn("&amp;", sanitized)
+        self.assertIn("&quot;", sanitized)
+    
+    def test_validate_prompt_event_handler_blocked(self):
+        from scriptai.web.services.registry import security_manager
+    
+        is_valid, err = security_manager.validate_prompt("onclick=alert(1)")
+        self.assertFalse(is_valid)
+        self.assertIsNotNone(err)
+    
+    def test_sanitize_handles_entity_obfuscation(self):
+        from scriptai.web.services.registry import security_manager
+    
+        s = "java&#115;cript:alert(1)"
+        sanitized = security_manager.sanitize_input(s)
+        # Ensure entity remains escaped, preventing browser execution if rendered
+        self.assertIn("java&amp;#115;cript:alert(1)", sanitized)
+
 
 if __name__ == "__main__":
     unittest.main()
