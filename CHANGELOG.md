@@ -19,8 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Explainable Smart Model Router: use `model: "auto"` to automatically select a provider based on prompt characteristics and availability. Include `debug=true` (or `?debug=1` / `X-Debug-Decision: 1`) to receive the routing rationale and ranked candidates in the response. Monitoring logs attribute usage to the selected provider, and existing fallback behavior applies on upstream errors.
 
 ## [1.7.0] - Unreleased
 
@@ -32,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dev experience: Vite proxy routes for `/metrics-json` and `/security-stats` to the Flask backend; clearer handling when the backend is offline.
 - Observability & security: consistent `X-Request-ID` propagation to the SPA and CSP tightened to safely allow Prism assets.
 - Usability tuning: steadier tabs and layout, improved Generated Output ergonomics (copy/download), and fewer layout shifts.
+
+### Added
+- Explainable Smart Model Router: use `model: "auto"` to automatically select a provider based on prompt characteristics and availability. Include `debug=true` (or `?debug=1` / `X-Debug-Decision: 1`) to receive the routing rationale and ranked candidates in the response. Monitoring logs attribute usage to the selected provider, and existing fallback behavior applies on upstream errors.
 
 ### Changed — API Directory Structure
 - Introduced an app factory at `scriptai.web.app:create_app` to centralize env loading, security headers, request hooks, and blueprint registration.
