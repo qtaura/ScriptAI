@@ -194,9 +194,15 @@ def generate_code():
     # Harden client IP extraction: honor first XFF entry only
     xff = request.environ.get("HTTP_X_FORWARDED_FOR")
     if isinstance(xff, str) and xff.strip():
-        client_ip = xff.split(",")[0].strip()
+        client_ip: str = xff.split(",")[0].strip()
     else:
-        client_ip = request.remote_addr or request.environ.get("REMOTE_ADDR")
+        # Ensure a strict string type for mypy: fall back to REMOTE_ADDR or localhost
+        addr = request.remote_addr
+        if isinstance(addr, str) and addr:
+            client_ip = addr
+        else:
+            rem = request.environ.get("REMOTE_ADDR")
+            client_ip = rem if isinstance(rem, str) and rem else "127.0.0.1"
 
     try:
         # Get the prompt and model from the request
