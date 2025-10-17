@@ -45,3 +45,6 @@ except Exception:
 
 # Expose as `app` for Vercel Python runtime with consistent type
 app: WSGIApp = handler_app
+
+# Explicit module export for clarity
+__all__ = ["app"]
