@@ -198,9 +198,11 @@ def generate_code():
 
         prompt = data.get("prompt")
         model = data.get("model", "openai")
-        debug = _is_truthy(data.get("debug")) or _is_truthy(
-            request.args.get("debug")
-        ) or _is_truthy(request.headers.get("X-Debug-Decision"))
+        debug = (
+            _is_truthy(data.get("debug"))
+            or _is_truthy(request.args.get("debug"))
+            or _is_truthy(request.headers.get("X-Debug-Decision"))
+        )
 
         if not isinstance(prompt, str):
             return _json_error("'prompt' must be a string", 400)
@@ -329,7 +331,7 @@ def generate_code():
                                     {
                                         "client_ip": client_ip,
                                         "model": alt,
-                                    "fallback_from": selected_model,
+                                        "fallback_from": selected_model,
                                     },
                                     request_id=getattr(g, "request_id", None),
                                 )
