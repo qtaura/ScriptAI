@@ -80,8 +80,14 @@ def ensure_session_dir(project_root: Optional[str] = None) -> str:
 class SessionLogger:
     """Simple session logger that writes JSONL events per project."""
 
-    def __init__(self, project_root: Optional[str] = None, privacy_mode: Optional[bool] = None):
-        self.privacy_mode = _env_bool("DATA_PRIVACY_MODE", False) if privacy_mode is None else bool(privacy_mode)
+    def __init__(
+        self, project_root: Optional[str] = None, privacy_mode: Optional[bool] = None
+    ):
+        self.privacy_mode = (
+            _env_bool("DATA_PRIVACY_MODE", False)
+            if privacy_mode is None
+            else bool(privacy_mode)
+        )
         self.project_root = find_project_root(project_root)
         self.session_dir = None  # type: Optional[str]
         self.session_path = None  # type: Optional[str]
@@ -97,7 +103,9 @@ class SessionLogger:
                 # keep session_dir as None and effectively no-op.
                 self.session_dir = None
 
-    def start(self, label: Optional[str] = None, model: Optional[str] = None) -> Optional[str]:
+    def start(
+        self, label: Optional[str] = None, model: Optional[str] = None
+    ) -> Optional[str>:
         if self.privacy_mode:
             return None
         if not self.session_dir:
