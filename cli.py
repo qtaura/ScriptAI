@@ -488,7 +488,14 @@ class ScriptAICLI:
                 # Ensure session end is recorded on process exit
                 import atexit
 
-                atexit.register(lambda: self.session_logger and self.session_logger.end(status="completed"))
+                def _end_session() -> None:
+                    try:
+                        if self.session_logger is not None:
+                            self.session_logger.end(status="completed")
+                    except Exception:
+                        pass
+
+                atexit.register(_end_session)
         except Exception:
             pass
 
