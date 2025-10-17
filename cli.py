@@ -41,6 +41,7 @@ from typing import Tuple, List, Optional, Dict, Any
 from dotenv import load_dotenv
 from security import SecurityManager
 from monitoring import MonitoringManager
+from scriptai.sessions import SessionLogger
 
 # Load environment variables
 load_dotenv()
@@ -472,6 +473,23 @@ class ScriptAICLI:
                 ),
             ),
         }
+
+        # Initialize per-project session logger (no-op in privacy mode)
+        try:
+            self.session_logger = SessionLogger(privacy_mode=self.privacy_mode)
+        except Exception:
+            self.session_logger = None  # type: ignore[assignment]
+
+        # Start a session after models are ready so we can include default model
+        try:
+            if getattr(self, "session_logger", None):
+                self.session_logger.start(label="cli", model=self.current_model)  # type: ignore[attr-defined]
+                # Ensure session end is recorded on process exit
+                import atexit
+
+                atexit.register(lambda: self.session_logger.end(status="completed"))  # type: ignore[attr-defined]
+        except Exception:
+            pass
 
     def _model_is_available(self, model_name: str) -> bool:
         """Check if a model can be used based on configured credentials.
@@ -908,10 +926,37 @@ Any other input will be treated as a prompt for code generation.
                     "To set up your API key, create a .env file with "
                     f"{self.current_model.upper()}_API_KEY=your_key_here"
                 )
+            # Record failed interaction
+            try:
+                if getattr(self, "session_logger", None):
+                    self.session_logger.record_interaction(
+                        prompt=prompt,
+                        output="",
+                        model=self.current_model,
+                        success=False,
+                        error=error,
+                        extra=None,
+                    )
+            except Exception:
+                pass
             return False
 
         self._add_to_history(prompt, self.current_model)
         self.last_generated_code = code
+
+        # Record successful interaction
+        try:
+            if getattr(self, "session_logger", None):
+                self.session_logger.record_interaction(
+                    prompt=prompt,
+                    output=code or "",
+                    model=self.current_model,
+                    success=True,
+                    error=None,
+                    extra=None,
+                )
+        except Exception:
+            pass
 
         print("\n" + "=" * 40 + " GENERATED CODE " + "=" * 40)
         print(code)
@@ -965,6 +1010,12 @@ Any other input will be treated as a prompt for code generation.
 
         # Save history before exiting
         self._save_history()
+        # Best-effort session end (atexit also registered)
+        try:
+            if getattr(self, "session_logger", None):
+                self.session_logger.end(status="completed")
+        except Exception:
+            pass
         print("\nThank you for using ScriptAI CLI!")
 
     def run_direct_mode(self, prompt: str, output_file: Optional[str] = None):

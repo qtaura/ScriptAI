@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Explainable Smart Model Router: use `model: "auto"` to automatically select a provider based on prompt characteristics and availability. Include `debug=true` (or `?debug=1` / `X-Debug-Decision: 1`) to receive the routing rationale and ranked candidates in the response. Monitoring logs attribute usage to the selected provider, and existing fallback behavior applies on upstream errors.
+- Persistent Session Files: store chats per project under `.scriptai_sessions/` as JSONL. The CLI automatically records each prompt/response to a per-run session file; respects `DATA_PRIVACY_MODE=true` to disable persistence.
 
 ### Changed — API Directory Structure
 - Introduced an app factory at `scriptai.web.app:create_app` to centralize env loading, security headers, request hooks, and blueprint registration.
