@@ -1,4 +1,4 @@
-"""
+﻿"""
 Session persistence utilities for ScriptAI.
 
 Stores per-project chat sessions under a ".scriptai_sessions" folder at the
@@ -194,3 +194,4 @@ class SessionLogger:
                 "status": status,
             }
         )
+
