@@ -1,4 +1,4 @@
-﻿import unittest
+import unittest
 import json
 import sys
 import os
@@ -80,7 +80,7 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         body = json.loads(response.data)
         self.assertIn("error", body)
-        self.assertTrue("Unknown model" in body["error"]) 
+        self.assertTrue("Unknown model" in body["error"])
 
     def test_prometheus_metrics_endpoint(self):
         """Ensure /metrics exposes Prometheus text format when installed."""

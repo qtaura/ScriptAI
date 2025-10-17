@@ -13,7 +13,11 @@ if TYPE_CHECKING:  # for type hints only; avoids runtime import issues
 import time
 from typing import Optional, Callable
 from model_adapters import get_adapter, available_models
-from scriptai.web.services.registry import security_manager, monitoring_manager, context_manager
+from scriptai.web.services.registry import (
+    security_manager,
+    monitoring_manager,
+    context_manager,
+)
 from scriptai.web.app import create_app
 import os
 
@@ -342,7 +346,10 @@ def generate_code():
                                 pass
                             # Record assistant message to context on success
                             try:
-                                context_manager.add_message(context_key, "assistant", alt_code)
+                            -                                context_manager.add_message(context_key, "assistant", alt_code)
+                            +                                context_manager.add_message(
+                            +                                    context_key, "assistant", alt_code
+                            +                                )
                             except Exception:
                                 pass
                             return jsonify(

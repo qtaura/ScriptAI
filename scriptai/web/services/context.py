@@ -40,17 +40,28 @@ class ContextManager:
         summarize_after: int = 20,
         max_summary_chars: int = 2000,
     ) -> None:
-        self.enabled = _env_bool("CONTEXT_ENABLED", True) if enabled is None else bool(enabled)
+        self.enabled = (
+            _env_bool("CONTEXT_ENABLED", True) if enabled is None else bool(enabled)
+        )
         try:
-            self.max_messages = int(os.getenv("CONTEXT_MAX_MESSAGES", str(max_messages)))
+-            self.max_messages = int(os.getenv("CONTEXT_MAX_MESSAGES", str(max_messages)))
++            self.max_messages = int(
++                os.getenv("CONTEXT_MAX_MESSAGES", str(max_messages))
++            )
         except Exception:
             self.max_messages = max_messages
         try:
-            self.summarize_after = int(os.getenv("CONTEXT_SUMMARIZE_AFTER", str(summarize_after)))
+-            self.summarize_after = int(os.getenv("CONTEXT_SUMMARIZE_AFTER", str(summarize_after)))
++            self.summarize_after = int(
++                os.getenv("CONTEXT_SUMMARIZE_AFTER", str(summarize_after))
++            )
         except Exception:
             self.summarize_after = summarize_after
         try:
-            self.max_summary_chars = int(os.getenv("CONTEXT_MAX_SUMMARY_CHARS", str(max_summary_chars)))
+-            self.max_summary_chars = int(os.getenv("CONTEXT_MAX_SUMMARY_CHARS", str(max_summary_chars)))
++            self.max_summary_chars = int(
++                os.getenv("CONTEXT_MAX_SUMMARY_CHARS", str(max_summary_chars))
++            )
         except Exception:
             self.max_summary_chars = max_summary_chars
 
@@ -96,6 +107,7 @@ class ContextManager:
         # Create/append summary
         addition = self._simple_summarize(older)
         st["summary"] = (st.get("summary") or "")
++        st["summary"] = st.get("summary") or ""
         if st["summary"]:
             st["summary"] += "\n"
         st["summary"] += addition
