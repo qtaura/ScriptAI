@@ -80,7 +80,7 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         body = json.loads(response.data)
         self.assertIn("error", body)
-        self.assertTrue("Unknown model" in body["error"])
+        self.assertTrue("Unknown model" in body["error"]) 
 
     def test_prometheus_metrics_endpoint(self):
         """Ensure /metrics exposes Prometheus text format when installed."""
@@ -368,6 +368,55 @@ class TestApp(unittest.TestCase):
         sanitized = security_manager.sanitize_input(s)
         # Ensure entity remains escaped, preventing browser execution if rendered
         self.assertIn("java&amp;#115;cript:alert(1)", sanitized)
+
+    # --- New tests for Smart Context Management ---
+    def test_context_debug_inspect_present(self):
+        headers = {"X-Conversation-Id": "conv-debug-1"}
+        r = self.app.post(
+            "/generate",
+            data=json.dumps({"prompt": "First prompt", "model": "local", "debug": True}),
+            content_type="application/json",
+            headers=headers,
+        )
+        self.assertEqual(r.status_code, 200)
+        body = json.loads(r.data)
+        self.assertIn("context", body)
+        ctx = body["context"]
+        self.assertIn("messages_count", ctx)
+        self.assertIn("summary_chars", ctx)
+        self.assertIn("composed_chars", ctx)
+        self.assertGreaterEqual(ctx.get("messages_count", 0), 1)
+
+    def test_context_summarization_trims_messages(self):
+        import app as app_module
+        from scriptai.web.services.context import ContextManager
+
+        # Replace the app's context manager with a test-friendly configuration
+        app_module.context_manager = ContextManager(
+            enabled=True, max_messages=3, summarize_after=4, max_summary_chars=500
+        )
+
+        headers = {"X-Conversation-Id": "conv-summarize-1"}
+        for i in range(5):
+            r = self.app.post(
+                "/generate",
+                data=json.dumps({
+                    "prompt": f"Message {i} content for summarization purposes",
+                    "model": "local",
+                    "debug": True,
+                }),
+                content_type="application/json",
+                headers=headers,
+            )
+            self.assertEqual(r.status_code, 200)
+            last_body = json.loads(r.data)
+
+        # After multiple messages, the manager should have summarized older ones
+        self.assertIn("context", last_body)
+        info = last_body["context"]
+        self.assertLessEqual(info.get("messages_count", 0), 3)
+        self.assertGreater(info.get("summary_chars", 0), 0)
+        self.assertIsInstance(info.get("summary_preview", ""), str)
 
 
 if __name__ == "__main__":

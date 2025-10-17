@@ -13,7 +13,7 @@ if TYPE_CHECKING:  # for type hints only; avoids runtime import issues
 import time
 from typing import Optional, Callable
 from model_adapters import get_adapter, available_models
-from scriptai.web.services.registry import security_manager, monitoring_manager
+from scriptai.web.services.registry import security_manager, monitoring_manager, context_manager
 from scriptai.web.app import create_app
 import os
 
@@ -245,6 +245,17 @@ def generate_code():
         # Sanitize input before passing to model adapters
         sanitized_prompt = security_manager.sanitize_input(prompt)
 
+        # Determine context key (conversation -> user -> IP) and record user message
+        conv_id = (
+            data.get("conversation_id")
+            or data.get("conversationId")
+            or request.headers.get("X-Conversation-Id")
+        )
+        user_id = getattr(g, "user_id", None)
+        context_key = (conv_id or user_id or client_ip) or "unknown"
+        context_manager.add_message(context_key, "user", sanitized_prompt)
+        composed_prompt = context_manager.compose_prompt(context_key, sanitized_prompt)
+
         # Determine model: support explainable smart routing when model == "auto"
         router_info = None
         selected_model = model
@@ -265,7 +276,7 @@ def generate_code():
         adapter = get_adapter(selected_model)
         if adapter is None:
             return _json_error(f"Unknown model: {selected_model}", 400)
-        code, error = adapter.generate(sanitized_prompt)
+        code, error = adapter.generate(composed_prompt)
 
         response_time = time.time() - start_time
 
@@ -314,7 +325,7 @@ def generate_code():
                         alt_adapter = get_adapter(alt)
                         if alt_adapter is None:
                             continue
-                        alt_code, alt_err = alt_adapter.generate(sanitized_prompt)
+                        alt_code, alt_err = alt_adapter.generate(composed_prompt)
                         if alt_err is None and alt_code:
                             # Log success under the fallback model
                             try:
@@ -327,6 +338,11 @@ def generate_code():
                                     error=None,
                                     request_id=getattr(g, "request_id", None),
                                 )
+                            except Exception:
+                                pass
+                            # Record assistant message to context on success
+                            try:
+                                context_manager.add_message(context_key, "assistant", alt_code)
                             except Exception:
                                 pass
                             return jsonify(
@@ -363,12 +379,26 @@ def generate_code():
             )
             return _json_error(error, status_code)
 
+        # Success: record assistant message to context
+        try:
+            context_manager.add_message(context_key, "assistant", code or "")
+        except Exception:
+            pass
+
         body: dict[str, Any] = {"code": code}
         # Include model_used when auto-selected or when debug requested
         if model == "auto" or debug:
             body["model_used"] = selected_model
         if router_info is not None:
             body["router"] = router_info
+        # Include context inspection when debug is enabled
+        if debug:
+            try:
+                info = context_manager.inspect(context_key)
+                info["composed_chars"] = len(composed_prompt)
+                body["context"] = info
+            except Exception:
+                pass
         return jsonify(body)
 
     except Exception as e:
