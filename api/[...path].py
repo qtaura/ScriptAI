@@ -1,4 +1,4 @@
-"""
+﻿"""
 Catch-all Vercel Python function exposing the Flask WSGI app.
 
 This ensures any request under `/api/*` is handled by the same Flask
