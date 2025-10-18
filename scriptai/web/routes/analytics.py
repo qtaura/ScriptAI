@@ -28,6 +28,7 @@ def session_analytics():
     conv_id = request.headers.get("X-Conversation-Id") or request.args.get(
         "conversation_id"
     )
+
     user_id = getattr(g, "user_id", None)
     context_key = (conv_id or user_id or client_ip) or "unknown"
 
