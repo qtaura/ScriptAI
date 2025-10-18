@@ -404,8 +404,8 @@ class ScriptAICLI:
     """Main CLI application class"""
 
     def __init__(self, auto_start: bool = True, resume: bool = False):
-        self.history = []
-        self.last_generated_code = None
+        self.history: List[Dict[str, Any]] = []
+        self.last_generated_code: Optional[str] = None
         # Respect privacy mode from environment at runtime
         self.privacy_mode = _env_bool("DATA_PRIVACY_MODE", False)
         self.config = self._load_config()
