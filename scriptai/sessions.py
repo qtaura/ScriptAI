@@ -267,4 +267,3 @@ class SessionLogger:
             return candidates[0][1]
         except Exception:
             return None
-# End of file
