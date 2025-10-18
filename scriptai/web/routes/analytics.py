@@ -35,6 +35,7 @@ def get_session_analytics():
     primary_model = (
         max(models_used.items(), key=lambda kv: kv[1])[0] if models_used else None
     )
+
     consistent = bool(primary_model is not None and len(models_used) == 1)
 
     return jsonify(
