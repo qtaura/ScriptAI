@@ -44,6 +44,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - E2E failure artifacts archived: screenshots, videos, traces, and HTML report.
 - README shows build status and coverage badges.
 
+### Testing
+- New Playwright specs: `model-switch.spec.ts`, `prompt-validation.spec.ts`, `rate-limit.spec.ts`.
+- Model selector uses `data-slot="select-trigger"` and ARIA roles for stable targeting.
+- Prompt validation asserts server messages: dangerous content, too long, excessive repetition.
+- Strict rate limiting enabled via `RATELIMIT_STRICT_TEST=1`; UI shows 429 alert text.
+- E2E runs record responses and ensure code block renders for successful local generation.
+
 ### Changed — API Directory Structure
 - Introduced an app factory at `scriptai.web.app:create_app` to centralize env loading, security headers, request hooks, and blueprint registration.
 - Added service registry `scriptai/web/services/registry.py` exposing singletons: `security_manager` and `monitoring_manager` for reuse without circular imports.

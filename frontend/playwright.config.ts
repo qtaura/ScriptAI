@@ -2,6 +2,9 @@ import { defineConfig, devices } from '@playwright/test'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
+// Enable strict rate limit mode for e2e runs
+process.env.RATELIMIT_STRICT_TEST = process.env.RATELIMIT_STRICT_TEST ?? '1'
+
 // __dirname is not available in ESM; derive it from import.meta.url
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
