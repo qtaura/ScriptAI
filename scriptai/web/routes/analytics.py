@@ -11,9 +11,7 @@ bp = Blueprint("analytics", __name__)
 
 @bp.route("/session-analytics", methods=["GET"])  # frontend expects this path
 def get_session_analytics():
-    client_ip = (
-        request.environ.get("REMOTE_ADDR") or request.remote_addr or "127.0.0.1"
-    )
+    client_ip = request.environ.get("REMOTE_ADDR") or request.remote_addr or "127.0.0.1"
     conv_id = request.headers.get("X-Conversation-Id")
     user_id = getattr(g, "user_id", None)
     context_key = (conv_id or user_id or client_ip) or "unknown"
@@ -34,7 +32,9 @@ def get_session_analytics():
         if isinstance(model_name, str) and model_name:
             models_used[model_name] = models_used.get(model_name, 0) + 1
 
-    primary_model = max(models_used.items(), key=lambda kv: kv[1])[0] if models_used else None
+    primary_model = (
+        max(models_used.items(), key=lambda kv: kv[1])[0] if models_used else None
+    )
     consistent = bool(primary_model is not None and len(models_used) == 1)
 
     return jsonify(

@@ -79,7 +79,9 @@ class ContextManager:
             role = m.get("role") or "unknown"
             content = m.get("content") or ""
             parts.append(f"{role.capitalize()}: {content}\n")
-        new_summary = (summary + ("" if summary.endswith("\n") else "") + "".join(parts)).strip()
+        new_summary = (
+            summary + ("" if summary.endswith("\n") else "") + "".join(parts)
+        ).strip()
         self._set_summary(key, new_summary)
 
     def _summarize_if_needed(self, key: str) -> None:
