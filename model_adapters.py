@@ -5,7 +5,7 @@ from typing import Optional, Tuple, Dict, Any, List
 
 import importlib.util
 import sys
-from typing import Callable, Type, Union
+from typing import Callable
 from dataclasses import dataclass
 
 
@@ -30,7 +30,7 @@ _ADAPTER_REGISTRY: Dict[str, AdapterRegistration] = {}
 def register_adapter(
     id: str,
     name: str,
-    adapter_cls_or_factory: Union[Type["ModelAdapter"], Callable[[], "ModelAdapter"]],
+    adapter_cls_or_factory: Callable[..., "ModelAdapter"],
     is_available: Optional[Callable[[], bool]] = None,
     description: Optional[str] = None,
 ) -> None:
@@ -38,17 +38,13 @@ def register_adapter(
 
     - id: canonical model id (e.g., "mycloud", "mylocal")
     - name: human-friendly name
-    - adapter_cls_or_factory: class or factory function returning a ModelAdapter
+    - adapter_cls_or_factory: callable returning a ModelAdapter (class or factory)
     - is_available: function returning True when credentials/runtime are ready
     - description: optional text shown in docs or UI
     """
 
-    if isinstance(adapter_cls_or_factory, type):
-        def _builder() -> "ModelAdapter":
-            return adapter_cls_or_factory()
-    else:
-        def _builder() -> "ModelAdapter":
-            return adapter_cls_or_factory()
+    def _builder() -> "ModelAdapter":
+        return adapter_cls_or_factory()
 
     _ADAPTER_REGISTRY[id] = AdapterRegistration(
         id=id,
