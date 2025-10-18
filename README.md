@@ -13,6 +13,7 @@
     <a href="#security--observability">Security & Observability</a> •
     <a href="#architecture">Architecture</a> •
     <a href="#development">Development</a> •
+    <a href="#plugin-development">Plugin Development</a> •
     <a href="#testing">Testing</a> •
     <a href="#license">License</a>
   </p>
@@ -190,6 +191,13 @@ cd frontend
 npm install
 npm run dev
 ```
+
+## Plugin Development
+
+- Drop Python files under `plugins/` or set `SCRIPT_AI_PLUGINS_DIR` to point at a folder.
+- Implement an adapter by subclassing `model_adapters.ModelAdapter` and register it via `register_adapter` in a `register(register_adapter)` function.
+- Registered adapters appear in `GET /models` when `is_available()` returns `true`.
+- For a copy‑paste starter, see `plugins/hello_world_adapter.py` and the docs: `docs/plugins.md`.
 
 ## Testing
 - Run tests: `py -3 -m pytest -q`.

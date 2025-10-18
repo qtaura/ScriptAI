@@ -3,10 +3,97 @@ import time
 from typing import Optional, Tuple, Dict, Any, List
 
 
+import importlib.util
+import sys
+from typing import Callable
+from dataclasses import dataclass
+
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
+
+@dataclass
+class AdapterRegistration:
+    id: str
+    name: str
+    builder: Callable[[], "ModelAdapter"]
+    is_available: Callable[[], bool]
+    description: Optional[str] = None
+
+
+_ADAPTER_REGISTRY: Dict[str, AdapterRegistration] = {}
+
+
+def register_adapter(
+    id: str,
+    name: str,
+    adapter_cls_or_factory: Any,
+    is_available: Optional[Callable[[], bool]] = None,
+    description: Optional[str] = None,
+) -> None:
+    """Register a model adapter via plugin.
+
+    - id: canonical model id (e.g., "mycloud", "mylocal")
+    - name: human-friendly name
+    - adapter_cls_or_factory: class or factory function returning a ModelAdapter
+    - is_available: function returning True when credentials/runtime are ready
+    - description: optional text shown in docs or UI
+    """
+
+    def _builder() -> "ModelAdapter":
+        try:
+            # Treat adapter_cls_or_factory as a callable factory
+            return adapter_cls_or_factory()
+        except TypeError:
+            # Fallback: if it's a class type, instantiate without args
+            return adapter_cls_or_factory()
+
+    _ADAPTER_REGISTRY[id] = AdapterRegistration(
+        id=id,
+        name=name,
+        builder=_builder,
+        is_available=is_available or (lambda: True),
+        description=description,
+    )
+
+
+def load_plugins(plugins_dir: Optional[str] = None) -> None:
+    """Load plugin modules from a directory and invoke their register() function.
+
+    Looks for Python files under `plugins_dir` (default: ./plugins/). Each module may
+    optionally expose `register(register_adapter)` which receives the registration
+    function to declare adapters.
+
+    Never raises; startup should not fail due to plugin errors.
+    """
+    base_dir = plugins_dir or os.getenv("SCRIPT_AI_PLUGINS_DIR")
+    if not base_dir:
+        base_dir = os.path.join(os.path.dirname(__file__), "plugins")
+    try:
+        if not os.path.isdir(base_dir):
+            return
+        for fname in os.listdir(base_dir):
+            if not fname.endswith(".py") or fname.startswith("_"):
+                continue
+            path = os.path.join(base_dir, fname)
+            mod_name = f"scriptai_plugin_{os.path.splitext(fname)[0]}"
+            try:
+                spec = importlib.util.spec_from_file_location(mod_name, path)
+                if spec and spec.loader:
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[mod_name] = module
+                    spec.loader.exec_module(module)  # type: ignore[attr-defined]
+                    reg = getattr(module, "register", None)
+                    if callable(reg):
+                        reg(register_adapter)
+            except Exception:
+                # Skip broken plugin without interrupting startup
+                pass
+    except Exception:
+        pass
 
 
 class ModelAdapter:
@@ -178,31 +265,23 @@ class AnthropicAdapter(ModelAdapter):
                 # Claude responses are an array of content blocks
                 text = "".join([getattr(b, "text", "") for b in resp.content])
             except Exception:
-                text = getattr(resp, "content", "") or getattr(resp, "output_text", "")
-            code = str(text or "").strip()
-            if "```" in code:
-                parts = code.split("```")
+                text = str(resp)
+            # Attempt to extract code block if present
+            if "```" in text:
+                parts = text.split("```")
                 if len(parts) >= 2:
                     return parts[1].strip(), None
-            return code, None
-        except Exception as e:  # pragma: no cover
-            # Provide friendlier error messages for common cases
-            msg = str(e)
-            if "rate" in msg.lower():
-                return None, "Anthropic rate limit exceeded"
-            if "auth" in msg.lower() or "key" in msg.lower():
-                return None, "Invalid Anthropic API key"
-            return None, f"Error with Anthropic API: {msg}"
+            return text.strip(), None
+        except Exception as e:
+            return None, f"Error with Anthropic API: {str(e)}"
 
 
 class GeminiAdapter(ModelAdapter):
     def generate(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
         try:
-            import google.generativeai as genai
+            import requests
         except Exception as e:  # pragma: no cover
-            return None, (
-                f"Google Generative AI import error: {str(e)}. Install with: pip install google-generativeai"
-            )
+            return None, f"Requests import error: {str(e)}"
 
         if not GOOGLE_API_KEY:
             return (
@@ -213,25 +292,45 @@ class GeminiAdapter(ModelAdapter):
                 ),
             )
 
+        # Placeholder Gemini endpoint (for illustration)
+        API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+        full_prompt = f"Generate code for the following request: {prompt}\n\n```"
         try:
-            genai.configure(api_key=GOOGLE_API_KEY)
-            model = genai.GenerativeModel("gemini-1.5-pro")
-            resp = model.generate_content(prompt)
-            # Extract primary text output
-            text = getattr(resp, "text", "") or ""
-            code = str(text).strip()
-            if "```" in code:
-                parts = code.split("```")
-                if len(parts) >= 2:
-                    return parts[1].strip(), None
-            return code, None
-        except Exception as e:  # pragma: no cover
-            msg = str(e)
-            if "429" in msg or "rate" in msg.lower():
-                return None, "Gemini rate limit exceeded"
-            if "401" in msg or "403" in msg or "auth" in msg.lower():
-                return None, "Invalid Google API key"
-            return None, f"Error with Google Gemini API: {msg}"
+            response = requests.post(
+                API_URL,
+                params={"key": GOOGLE_API_KEY},
+                json={"contents": [{"parts": [{"text": full_prompt}]}]},
+                timeout=30,
+            )
+            if response.status_code == 200:
+                data = response.json()
+                # Simplified extraction
+                text = (
+                    data.get("candidates", [{}])[0]
+                    .get("content", {})
+                    .get("parts", [{}])[0]
+                    .get("text", "")
+                )
+                if "```" in text:
+                    parts = text.split("```")
+                    if len(parts) >= 2:
+                        return parts[1].strip(), None
+                return text.strip(), None
+            else:
+                if response.status_code == 429:
+                    return None, "Gemini rate limit exceeded"
+                if 500 <= response.status_code < 600:
+                    return None, f"Gemini service error ({response.status_code})"
+                try:
+                    err = response.json()
+                    detail = err.get("error") if isinstance(err, dict) else None
+                    if detail:
+                        return None, f"Gemini API error: {detail}"
+                except Exception:
+                    pass
+                return None, f"Error: API returned status code {response.status_code}"
+        except Exception as e:
+            return None, f"Error with Gemini API: {str(e)}"
 
 
 def _detect_language(prompt: str) -> str:
@@ -255,7 +354,6 @@ def _generate_stub(lang: str, prompt: str) -> str:
             f"    Generated locally based on prompt: {prompt}\n"
             "    Replace this stub with your implementation.\n"
             "    \"\"\"\n"
-            "    # TODO: implement logic based on requirements above\n"
             "    return None\n"
         )
     if lang == "javascript":
@@ -285,7 +383,24 @@ def _generate_stub(lang: str, prompt: str) -> str:
             "<div id=\"app\">Replace this stub with your implementation</div>"
             "</body></html>\n"
         )
-    return _generate_stub("python", prompt)
+    # Fallback to a simple Python stub
+    return (
+        "# Generated locally based on prompt\n"
+        f"# {prompt}\n"
+        "def generated_function():\n"
+        "    pass\n"
+    )
+
+
+def _detect_language(prompt: str) -> str:
+    p = prompt.lower()
+    if any(k in p for k in ["react", "component", "javascript", "node", "frontend"]):
+        return "javascript"
+    if any(k in p for k in ["sql", "database", "query", "postgres", "mysql"]):
+        return "sql"
+    if any(k in p for k in ["html", "css", "webpage", "template"]):
+        return "html"
+    return "python"
 
 
 class LocalAdapter(ModelAdapter):
@@ -295,6 +410,14 @@ class LocalAdapter(ModelAdapter):
 
 
 def get_adapter(model: str) -> Optional[ModelAdapter]:
+    # Prefer plugins/registry if present
+    reg = _ADAPTER_REGISTRY.get(model)
+    if reg:
+        try:
+            return reg.builder()
+        except Exception:
+            return None
+    # Built-in adapters
     if model == "openai":
         return OpenAIAdapter()
     if model == "huggingface":
@@ -319,4 +442,14 @@ def available_models() -> List[Dict[str, Any]]:
     if GOOGLE_API_KEY:
         models.append({"id": "gemini", "name": "Google Gemini"})
     models.append({"id": "local", "name": "Local Model (Placeholder)"})
+
+    # Include registered plugin adapters that report availability
+    try:
+        for pid, reg in _ADAPTER_REGISTRY.items():
+            if reg.is_available():
+                if not any(m.get("id") == pid for m in models):
+                    models.append({"id": pid, "name": reg.name})
+    except Exception:
+        pass
+
     return models

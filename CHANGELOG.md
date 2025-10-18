@@ -38,6 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI Memory Flags: `--stateless` disables history and session logging; `--resume` continues logging into the latest session file for consolidated runs.
 - Session Analytics: backend `/session-analytics` blueprint returns per-session stats (message count, estimated tokens, model usage breakdown, primary model, consistency) via `context_manager` and `monitoring_manager`.
 - Frontend SessionAnalytics component: integrated into Code Generator “Info” tab; auto-refreshes on generation, error states, and model changes.
+- Plugin/Extension API for model adapters: simple `register(register_adapter)` entry point scanned from `plugins/`.
+- Adapter registry and dynamic loader in `model_adapters.py`; supports factories and availability checks.
+- App startup loads plugins via `SCRIPT_AI_PLUGINS_DIR` (`./plugins/` default) and fails safely.
+- Hello World adapter template at `plugins/hello_world_adapter.py` to jump-start new adapters.
+- Docs: `docs/plugins.md` with plugin anatomy, quickstart, testing, and best practices.
+- README: new "Plugin Development" section linking to the docs and template.
 
 ### CI & Automated Workflow Polish
 - Separate jobs for backend tests, frontend unit tests, and Playwright e2e.

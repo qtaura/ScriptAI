@@ -17,6 +17,7 @@ from scriptai.web.routes.spa import bp as spa_bp
 from scriptai.web.routes.analytics import bp as analytics_bp
 from scriptai.web.services.registry import monitoring_manager, security_manager
 from scriptai.web.auth import init_auth
+from model_adapters import load_plugins
 
 
 def _apply_security_headers(response):
@@ -62,6 +63,13 @@ def create_app() -> Flask:
 
     # Initialize optional auth guard (enabled when AUTH_TOKEN is set)
     init_auth(app)
+
+    # Load model adapter plugins (safe/no-op if directory missing)
+    try:
+        load_plugins(os.getenv("SCRIPT_AI_PLUGINS_DIR"))
+    except Exception:
+        # Never fail startup due to plugin loading issues
+        pass
 
     # Basic config
     app.config.setdefault("JSON_SORT_KEYS", False)
