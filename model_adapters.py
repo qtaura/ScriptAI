@@ -5,7 +5,7 @@ from typing import Optional, Tuple, Dict, Any, List
 
 import importlib.util
 import sys
-from typing import Callable
+from typing import Callable, Type, Union, cast
 from dataclasses import dataclass
 
 
@@ -30,7 +30,7 @@ _ADAPTER_REGISTRY: Dict[str, AdapterRegistration] = {}
 def register_adapter(
     id: str,
     name: str,
-    adapter_cls_or_factory: Any,
+    adapter_cls_or_factory: Union[Type["ModelAdapter"], Callable[[], "ModelAdapter"]],
     is_available: Optional[Callable[[], bool]] = None,
     description: Optional[str] = None,
 ) -> None:
@@ -43,13 +43,12 @@ def register_adapter(
     - description: optional text shown in docs or UI
     """
 
-    def _builder() -> "ModelAdapter":
-        try:
-            # Treat adapter_cls_or_factory as a callable factory
-            return adapter_cls_or_factory()
-        except TypeError:
-            # Fallback: if it's a class type, instantiate without args
-            return adapter_cls_or_factory()
+    if isinstance(adapter_cls_or_factory, type):
+        def _builder() -> "ModelAdapter":
+            return cast(Type["ModelAdapter"], adapter_cls_or_factory)()
+    else:
+        def _builder() -> "ModelAdapter":
+            return cast(Callable[[], "ModelAdapter"], adapter_cls_or_factory)()
 
     _ADAPTER_REGISTRY[id] = AdapterRegistration(
         id=id,
@@ -85,7 +84,7 @@ def load_plugins(plugins_dir: Optional[str] = None) -> None:
                 if spec and spec.loader:
                     module = importlib.util.module_from_spec(spec)
                     sys.modules[mod_name] = module
-                    spec.loader.exec_module(module)  # type: ignore[attr-defined]
+                    spec.loader.exec_module(module)
                     reg = getattr(module, "register", None)
                     if callable(reg):
                         reg(register_adapter)
@@ -390,17 +389,6 @@ def _generate_stub(lang: str, prompt: str) -> str:
         "def generated_function():\n"
         "    pass\n"
     )
-
-
-def _detect_language(prompt: str) -> str:
-    p = prompt.lower()
-    if any(k in p for k in ["react", "component", "javascript", "node", "frontend"]):
-        return "javascript"
-    if any(k in p for k in ["sql", "database", "query", "postgres", "mysql"]):
-        return "sql"
-    if any(k in p for k in ["html", "css", "webpage", "template"]):
-        return "html"
-    return "python"
 
 
 class LocalAdapter(ModelAdapter):
