@@ -374,7 +374,9 @@ class TestApp(unittest.TestCase):
         headers = {"X-Conversation-Id": "conv-debug-1"}
         r = self.app.post(
             "/generate",
-            data=json.dumps({"prompt": "First prompt", "model": "local", "debug": True}),
+            data=json.dumps(
+                {"prompt": "First prompt", "model": "local", "debug": True}
+            ),
             content_type="application/json",
             headers=headers,
         )
@@ -400,11 +402,13 @@ class TestApp(unittest.TestCase):
         for i in range(5):
             r = self.app.post(
                 "/generate",
-                data=json.dumps({
-                    "prompt": f"Message {i} content for summarization purposes",
-                    "model": "local",
-                    "debug": True,
-                }),
+                data=json.dumps(
+                    {
+                        "prompt": f"Message {i} content for summarization purposes",
+                        "model": "local",
+                        "debug": True,
+                    }
+                ),
                 content_type="application/json",
                 headers=headers,
             )

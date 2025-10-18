@@ -346,7 +346,9 @@ def generate_code():
                                 pass
                             # Record assistant message to context on success
                             try:
-                                context_manager.add_message(context_key, "assistant", alt_code)
+                                context_manager.add_message(
+                                    context_key, "assistant", alt_code
+                                )
                             except Exception:
                                 pass
                             return jsonify(
