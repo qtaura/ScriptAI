@@ -5,7 +5,7 @@ from typing import Optional, Tuple, Dict, Any, List
 
 import importlib.util
 import sys
-from typing import Callable, Type, Union, cast
+from typing import Callable, Type, Union
 from dataclasses import dataclass
 
 
@@ -45,10 +45,10 @@ def register_adapter(
 
     if isinstance(adapter_cls_or_factory, type):
         def _builder() -> "ModelAdapter":
-            return cast(Type["ModelAdapter"], adapter_cls_or_factory)()
+            return adapter_cls_or_factory()
     else:
         def _builder() -> "ModelAdapter":
-            return cast(Callable[[], "ModelAdapter"], adapter_cls_or_factory)()
+            return adapter_cls_or_factory()
 
     _ADAPTER_REGISTRY[id] = AdapterRegistration(
         id=id,
