@@ -403,7 +403,7 @@ class GeminiGenerator(CodeGenerator):
 class ScriptAICLI:
     """Main CLI application class"""
 
-    def __init__(self):
+    def __init__(self, auto_start: bool = True, resume: bool = False):
         self.history = []
         self.last_generated_code = None
         # Respect privacy mode from environment at runtime
@@ -481,10 +481,13 @@ class ScriptAICLI:
         except Exception:
             self.session_logger = None
 
-        # Start a session after models are ready so we can include default model
+        # Start or resume a session after models are ready so we can include default model
         try:
             if self.session_logger is not None:
-                self.session_logger.start(label="cli", model=self.current_model)
+                if resume:
+                    self.session_logger.resume(label="cli", model=self.current_model)
+                elif auto_start:
+                    self.session_logger.start(label="cli", model=self.current_model)
                 # Ensure session end is recorded on process exit
                 import atexit
 
@@ -1136,6 +1139,16 @@ def main():
         action="store_true",
         help="Enable Data Privacy Mode (no config/history persistence, no file logging)",
     )
+    parser.add_argument(
+        "--stateless",
+        action="store_true",
+        help="Run without persistent memory (no history or session logging)",
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume logging to the latest CLI session file",
+    )
 
     args = parser.parse_args()
 
@@ -1151,7 +1164,7 @@ def main():
     os.environ["LOG_LEVEL"] = level_name
 
     # Enable privacy mode if requested
-    if getattr(args, "privacy", False):
+    if getattr(args, "privacy", False) or getattr(args, "stateless", False):
         os.environ["DATA_PRIVACY_MODE"] = "true"
         # Also force-disable file logging for downstream libs
         os.environ.setdefault("LOG_TO_FILE", "false")
@@ -1159,7 +1172,13 @@ def main():
     monitoring = MonitoringManager(enable_metrics=False)
     monitoring.setup_logging()
 
-    cli = ScriptAICLI()
+    # Determine resume behavior (ignored in stateless/privacy mode)
+    resume_flag = bool(getattr(args, "resume", False))
+    if _env_bool("DATA_PRIVACY_MODE", False) and resume_flag:
+        print("Note: --resume ignored in stateless/privacy mode.")
+        resume_flag = False
+
+    cli = ScriptAICLI(auto_start=(not resume_flag), resume=resume_flag)
 
     # Subcommand: benchmark
     if getattr(args, "command", None) == "benchmark":

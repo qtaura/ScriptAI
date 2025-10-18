@@ -194,3 +194,76 @@ class SessionLogger:
                 "status": status,
             }
         )
+
+    # New: resume existing session file (latest or specific path)
+    def resume(
+        self,
+        path: Optional[str] = None,
+        label: Optional[str] = None,
+        model: Optional[str] = None,
+    ) -> Optional[str]:
+        if self.privacy_mode:
+            return None
+        if not self.session_dir:
+            return None
+
+        try:
+            target_path = None
+            if path and os.path.exists(path):
+                target_path = os.path.abspath(path)
+            else:
+                target_path = self._find_latest_session_file()
+
+            if not target_path:
+                # No previous session found; start a new one
+                return self.start(label=label, model=model)
+
+            self.session_path = target_path
+            # Try to parse UUID from filename pattern: session-<ts>-<pid>-<uuid>.jsonl
+            base = os.path.basename(target_path)
+            try:
+                uuid_part = base.rsplit("-", 1)[-1].replace(".jsonl", "")
+                # rudimentary validation
+                if len(uuid_part) >= 8:
+                    self.session_id = uuid_part
+            except Exception:
+                pass
+
+            # Write a resume event for traceability
+            self._write_event(
+                {
+                    "type": "session_resume",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "id": self.session_id,
+                    "label": label or "cli",
+                    "model": model or None,
+                    "host": self.host,
+                    "project_root": self.project_root,
+                    "version": self._read_version(),
+                }
+            )
+            return self.session_path
+        except Exception:
+            # Fallback: start a new session if resume fails
+            return self.start(label=label, model=model)
+
+    def _find_latest_session_file(self) -> Optional[str]:
+        if not self.session_dir or not os.path.isdir(self.session_dir):
+            return None
+        try:
+            candidates = []
+            for name in os.listdir(self.session_dir):
+                if not name.startswith("session-") or not name.endswith(".jsonl"):
+                    continue
+                full = os.path.join(self.session_dir, name)
+                try:
+                    mtime = os.path.getmtime(full)
+                    candidates.append((mtime, full))
+                except Exception:
+                    continue
+            if not candidates:
+                return None
+            candidates.sort(key=lambda x: x[0], reverse=True)
+            return candidates[0][1]
+        except Exception:
+            return None
