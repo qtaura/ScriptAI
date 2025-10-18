@@ -136,6 +136,19 @@ jobs:
       run: |
         npx playwright install --with-deps
 
+    - name: Start backend server for e2e
+      env:
+        RATELIMIT_STRICT_TEST: 1
+      run: |
+        nohup python app.py > backend.log 2>&1 &
+        for i in {1..60}; do
+          if curl -sSf http://127.0.0.1:5000/health > /dev/null; then
+            echo "Backend ready"
+            break
+          fi
+          sleep 2
+        done
+
     - name: Run e2e tests (Playwright)
       working-directory: frontend
       run: |
