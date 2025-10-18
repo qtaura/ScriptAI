@@ -122,3 +122,5 @@ def create_app() -> Flask:
     _validate_environment_on_startup(app)
 
     return app
+
+# EOF

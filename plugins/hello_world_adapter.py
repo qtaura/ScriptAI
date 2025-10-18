@@ -39,3 +39,5 @@ def register(register_adapter):
         is_available=is_available,
         description="Simple template adapter that returns a small Python stub.",
     )
+
+# EOF
