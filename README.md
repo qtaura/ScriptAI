@@ -19,6 +19,7 @@
 </div>
 
 [![CI](https://github.com/qtaura/ScriptAI/actions/workflows/ci.yml/badge.svg)](https://github.com/qtaura/ScriptAI/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/qtaura/ScriptAI/branch/main/graph/badge.svg)](https://codecov.io/gh/qtaura/ScriptAI)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue)](pyproject.toml)
 

@@ -36,6 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Persistent Session Files: store chats per project under `.scriptai_sessions/` as JSONL. The CLI automatically records each prompt/response to a per-run session file; respects `DATA_PRIVACY_MODE=true` to disable persistence.
 - Smart Context Management: auto-trims old messages per conversation and summarizes history into a compact, rolling prefix. Context key respects `X-Conversation-Id`, authenticated `user_id`, or client IP. Debugging returns `context` inspection (counts, summary preview, composed chars) when `debug=1`.
 
+### CI & Automated Workflow Polish
+- Separate jobs for backend tests, frontend unit tests, and Playwright e2e.
+- Backend coverage (`coverage.xml` + HTML) uploaded to Codecov and as artifacts.
+- Frontend coverage (`frontend/coverage/lcov.info`) uploaded to Codecov and archived.
+- E2E failure artifacts archived: screenshots, videos, traces, and HTML report.
+- README shows build status and coverage badges.
+
 ### Changed — API Directory Structure
 - Introduced an app factory at `scriptai.web.app:create_app` to centralize env loading, security headers, request hooks, and blueprint registration.
 - Added service registry `scriptai/web/services/registry.py` exposing singletons: `security_manager` and `monitoring_manager` for reuse without circular imports.
