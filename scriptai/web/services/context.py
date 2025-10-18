@@ -86,9 +86,8 @@ class ContextManager:
 
     def _summarize_if_needed(self, key: str) -> None:
         ctx = self._get_context(key)
-        # Begin summarizing when over summarize_after
-        if len(ctx) > self.summarize_after:
-            # Number of messages to move into summary to retain max_messages
+        # Summarize when exceeding either threshold; always cap to max_messages
+        if len(ctx) > self.summarize_after or len(ctx) > self.max_messages:
             to_summarize = max(0, len(ctx) - self.max_messages)
             if to_summarize > 0:
                 old_msgs: List[Dict[str, Any]] = []
