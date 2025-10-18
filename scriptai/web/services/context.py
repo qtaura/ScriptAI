@@ -179,5 +179,25 @@ class ContextManager:
             "summary_preview": (st.get("summary") or "")[:200],
         }
 
+    def get_stats(self, key: str) -> Dict[str, Any]:
+        """
+        Analytics-friendly stats for a given context key.
+        Returns:
+            - messages_count: number of messages currently kept for the key
+            - content_chars: total chars across kept messages + summary
+        """
+        st = self._ensure_key(key)
+        msgs: deque = st["messages"]
+        total_chars = len(st.get("summary") or "")
+        for _, text in list(msgs):
+            try:
+                total_chars += len(text or "")
+            except Exception:
+                pass
+        return {
+            "messages_count": len(msgs),
+            "content_chars": total_chars,
+        }
+
 
 __all__ = ["ContextManager"]

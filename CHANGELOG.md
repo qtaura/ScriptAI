@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Persistent Session Files: store chats per project under `.scriptai_sessions/` as JSONL. The CLI automatically records each prompt/response to a per-run session file; respects `DATA_PRIVACY_MODE=true` to disable persistence.
 - Smart Context Management: auto-trims old messages per conversation and summarizes history into a compact, rolling prefix. Context key respects `X-Conversation-Id`, authenticated `user_id`, or client IP. Debugging returns `context` inspection (counts, summary preview, composed chars) when `debug=1`.
 - CLI Memory Flags: `--stateless` disables history and session logging; `--resume` continues logging into the latest session file for consolidated runs.
+- Session Analytics: backend `/session-analytics` blueprint returns per-session stats (message count, estimated tokens, model usage breakdown, primary model, consistency) via `context_manager` and `monitoring_manager`.
+- Frontend SessionAnalytics component: integrated into Code Generator “Info” tab; auto-refreshes on generation, error states, and model changes.
 
 ### CI & Automated Workflow Polish
 - Separate jobs for backend tests, frontend unit tests, and Playwright e2e.

@@ -13,19 +13,23 @@ test('model selection shows providers and local generates code', async ({ page }
   const listbox = page.getByRole('listbox')
   await expect(listbox).toBeVisible()
 
-  // Provider options should be visible
-  await expect(page.getByRole('option', { name: /Local Model \(Placeholder\)/i })).toBeVisible()
-  await expect(page.getByRole('option', { name: /OpenAI GPT-3\.5/i })).toBeVisible()
-  await expect(page.getByRole('option', { name: /Anthropic Claude/i })).toBeVisible()
-  await expect(page.getByRole('option', { name: /Google Gemini/i })).toBeVisible()
-  await expect(page.getByRole('option', { name: /HuggingFace StarCoder/i })).toBeVisible()
+  // Provider options should be visible (allow optional "requires key" suffix)
+  await expect(page.getByRole('option', { name: /Local Model(?: \(Placeholder\))?/i })).toBeVisible()
+  await expect(page.getByRole('option', { name: /OpenAI GPT-3\.5(?: \(requires key\))?/i })).toBeVisible()
+  await expect(page.getByRole('option', { name: /Anthropic Claude(?: \(requires key\))?/i })).toBeVisible()
+  await expect(page.getByRole('option', { name: /Google Gemini(?: \(requires key\))?/i })).toBeVisible()
+  await expect(page.getByRole('option', { name: /HuggingFace StarCoder(?: \(requires key\))?/i })).toBeVisible()
 
-  // Close dropdown
-  await page.keyboard.press('Escape')
+  // Select Local Model
+  await page.getByRole('option', { name: /Local Model(?: \(Placeholder\))?/i }).click()
 
   // Enter a prompt and generate
   await generator.getByPlaceholder('Describe what you want to create...').fill('Write a Python function that prints "Hello World"')
-  await generator.getByRole('button', { name: /Generate Code/i }).click()
+  const button = generator.getByRole('button', { name: /Generate Code/i })
+  await Promise.all([
+    page.waitForResponse((resp) => resp.url().includes('/generate') && resp.request().method() === 'POST'),
+    button.click(),
+  ])
 
   const codeBlock = generator.locator('pre code').first()
   await expect(codeBlock).toBeVisible()

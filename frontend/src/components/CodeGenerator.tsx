@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Prism from "prismjs";
 import "prismjs/themes/prism.css";
+import { SessionAnalytics } from "./SessionAnalytics";
 
 export function CodeGenerator() {
   const [prompt, setPrompt] = useState("");
@@ -520,6 +521,7 @@ ORDER BY u.username, p.category;`,
                             </div>
                           </div>
                         </div>
+                        <SessionAnalytics refreshKey={`${generatedCode}:${errorMessage}:${model}`} />
                         <div>
                           <h4 className="mb-2">Features</h4>
                           <ul className="space-y-1 text-muted-foreground">

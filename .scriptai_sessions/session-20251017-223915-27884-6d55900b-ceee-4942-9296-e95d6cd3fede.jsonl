@@ -1,0 +1,2 @@
+{"type": "session_start", "timestamp": "2025-10-17T22:39:15.844441", "id": "6d55900b-ceee-4942-9296-e95d6cd3fede", "label": "cli", "model": "openai", "host": "MSI", "project_root": "C:\\Users\\kaesh\\ai-code-assistant", "version": "1.6.0"}
+{"type": "session_end", "timestamp": "2025-10-17T22:39:15.852002", "id": "6d55900b-ceee-4942-9296-e95d6cd3fede", "status": "completed"}

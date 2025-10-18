@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import os
 from typing import Any
@@ -14,6 +14,7 @@ from scriptai.config import (
 from scriptai.web.routes.metrics import bp as metrics_bp
 from scriptai.web.routes.models import bp as models_bp
 from scriptai.web.routes.spa import bp as spa_bp
+from scriptai.web.routes.analytics import bp as analytics_bp
 from scriptai.web.services.registry import monitoring_manager, security_manager
 from scriptai.web.auth import init_auth
 
@@ -65,6 +66,20 @@ def create_app() -> Flask:
     # Basic config
     app.config.setdefault("JSON_SORT_KEYS", False)
     app.config.setdefault("ENABLE_FALLBACK", enable_fallback_default())
+    # Read strict rate limit test flag from environment (default False)
+    try:
+        strict_val = os.getenv("RATELIMIT_STRICT_TEST")
+        if strict_val is not None:
+            app.config["RATELIMIT_STRICT_TEST"] = strict_val.strip().lower() in (
+                "1",
+                "true",
+                "yes",
+                "on",
+            )
+        else:
+            app.config.setdefault("RATELIMIT_STRICT_TEST", False)
+    except Exception:
+        app.config.setdefault("RATELIMIT_STRICT_TEST", False)
 
     # CORS (if using flask-cors elsewhere, omitted here to avoid new deps)
     cors_cfg = get_cors_config()
@@ -94,6 +109,7 @@ def create_app() -> Flask:
     app.register_blueprint(spa_bp)
     app.register_blueprint(models_bp)
     app.register_blueprint(metrics_bp)
+    app.register_blueprint(analytics_bp)
 
     _validate_environment_on_startup(app)
 
