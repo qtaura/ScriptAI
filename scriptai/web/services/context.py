@@ -68,23 +68,14 @@ class ContextManager:
     def _ensure_key(self, key: str) -> Dict[str, Any]:
         state = self._store.get(key)
         if state is None:
-            state = {"messages": deque(maxlen=max(1, self.max_messages)), "summary": ""}
++            state = {
++                "messages": deque(
++                    maxlen=max(1, max(self.max_messages, self.summarize_after))
++                ),
++                "summary": "",
++            }
             self._store[key] = state
         return state
-
-    def add_message(self, key: str, role: str, content: str) -> None:
-        if not self.enabled:
-            return
-        st = self._ensure_key(key)
-        # Normalize role
-        r = role if role in ("user", "assistant", "system") else "user"
-        # Trim overly long content for storage safety
-        safe = content.strip()
-        if len(safe) > 5000:
-            safe = safe[:5000] + "\n…"
-        st["messages"].append((r, safe))
-        # Summarize if necessary when message count exceeds threshold
-        self._maybe_summarize(key)
 
     def _maybe_summarize(self, key: str) -> None:
         st = self._ensure_key(key)
@@ -110,6 +101,26 @@ class ContextManager:
         # Cap summary length
         if len(st["summary"]) > self.max_summary_chars:
             st["summary"] = st["summary"][: self.max_summary_chars] + "\n…"
++        # Enforce recent message window after summarization
++        while len(msgs) > self.max_messages:
++            try:
++                msgs.popleft()
++            except IndexError:
++                break
+
+    def add_message(self, key: str, role: str, content: str) -> None:
+        if not self.enabled:
+            return
+        st = self._ensure_key(key)
+        # Normalize role
+        r = role if role in ("user", "assistant", "system") else "user"
+        # Trim overly long content for storage safety
+        safe = content.strip()
+        if len(safe) > 5000:
+            safe = safe[:5000] + "\n…"
+        st["messages"].append((r, safe))
+        # Summarize if necessary when message count exceeds threshold
+        self._maybe_summarize(key)
 
     @staticmethod
     def _simple_summarize(lines: List[str]) -> str:
