@@ -540,7 +540,9 @@ def generate_code_stream():
                     ]
                     available_ids = _available_model_ids()
                     candidates = [
-                        mid for mid in preferred_order if mid in available_ids and mid != selected_model
+                        mid
+                        for mid in preferred_order
+                        if mid in available_ids and mid != selected_model
                     ]
 
                     try:
@@ -572,7 +574,9 @@ def generate_code_stream():
                             except Exception:
                                 pass
                             try:
-                                context_manager.add_message(context_key, "assistant", alt_code)
+                                context_manager.add_message(
+                                    context_key, "assistant", alt_code
+                                )
                             except Exception:
                                 pass
                             code = alt_code
@@ -583,7 +587,11 @@ def generate_code_stream():
                                 monitoring_manager.log_error(
                                     "adapter_error",
                                     alt_err or "Unknown adapter error",
-                                    {"client_ip": client_ip, "model": alt, "fallback_from": selected_model},
+                                    {
+                                        "client_ip": client_ip,
+                                        "model": alt,
+                                        "fallback_from": selected_model,
+                                    },
                                     request_id=getattr(g, "request_id", None),
                                 )
                             except Exception:
