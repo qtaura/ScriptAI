@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Table of Contents
 - [Unreleased](#unreleased)
-- [1.7.0 - Unreleased](#170---unreleased)
+- [1.7.0 - 2025-10-19](#170---2025-10-19)
 - [1.6.0 - 2025-10-16](#160---2025-10-16)
 - [1.5.0 - 2025-10-16](#150---2025-10-16)
 - [1.4.5 - 2025-10-15](#145---2025-10-15)
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
-## [1.7.0] - Unreleased
+## [1.7.0] - 2025-10-19
 
 ### Teasers
 - Frontend depth: a richer SPA with a dedicated Metrics panel surfacing live usage, performance (avg/p95 latency, RPS), and security signals. Auto‑refreshing data with Prometheus‑backed endpoints.
