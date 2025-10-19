@@ -43,6 +43,7 @@ logs/
 .mypy_cache/
 .pytest_cache/
 scriptai_stats.json
+.scriptai_sessions/
 
 # Local scratch/backup (not required for app)
 sistant
