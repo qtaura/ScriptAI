@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Badge } from "./ui/badge";
+import { Switch } from "./ui/switch";
 import {
   Copy,
   Download,
@@ -20,6 +21,7 @@ import {
   Code2,
   Check,
   Loader2,
+  Terminal,
 } from "lucide-react";
 import Prism from "prismjs";
 import "prismjs/themes/prism.css";
@@ -31,13 +33,18 @@ export function CodeGenerator() {
   const [language, setLanguage] = useState("python");
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedCurl, setCopiedCurl] = useState(false);
+  const [useStreaming, setUseStreaming] = useState(false);
   const [models, setModels] = useState<{ id: string; name: string }[]>([]);
   const [profiles, setProfiles] = useState<Record<string, { speed?: string; quality?: string; cost?: string; badge?: string; available?: boolean }>>({});
   const [availableIds, setAvailableIds] = useState<string[]>([]);
+  const [disabledIds, setDisabledIds] = useState<string[]>([]);
   const [generatedCode, setGeneratedCode] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isModelOpen, setIsModelOpen] = useState(false);
   const [modelError, setModelError] = useState<string>("");
+  const [history, setHistory] = useState<string[]>([]);
+  const lastRequestRef = useRef<{ prompt: string; model: string; language: string } | null>(null);
 
   useEffect(() => {
     // Dynamic Model Registry: prefer backend profiles, fallback to JSON config; filter by server availability
@@ -114,8 +121,16 @@ export function CodeGenerator() {
 
     Promise.all([loadProfiles, loadConfig, loadAvailable])
       .then(([loadedProfiles, configModels, ids]) => {
-        // Preserve config-defined display names but mark availability separately
-        setAvailableIds(ids);
+        // Preserve config-defined display names but mark availability separately; honor locally disabled providers
+        let disabled: string[] = [];
+        try {
+          const raw = localStorage.getItem("scriptai.disabled_models");
+          const arr = raw ? JSON.parse(raw) : [];
+          if (Array.isArray(arr)) disabled = arr.map(String);
+        } catch {}
+        const effectiveIds = ids.filter((id) => !disabled.includes(id));
+        setAvailableIds(effectiveIds);
+        setDisabledIds(disabled);
         if (loadedProfiles && Object.keys(loadedProfiles).length > 0) {
           setProfiles(loadedProfiles);
         }
@@ -133,8 +148,8 @@ export function CodeGenerator() {
           );
         }
         setModels(finalModels);
-        // Choose first available model if present, otherwise prefer local
-        const availableDefault = finalModels.find((m) => ids.includes(m.id));
+        // Choose first available model if present, honor local disables; otherwise prefer local
+        const availableDefault = finalModels.find((m) => effectiveIds.includes(m.id));
         const defaultModel = availableDefault || finalModels.find((m) => m.id === "local") || finalModels[0];
         if (defaultModel) setModel(defaultModel.id);
         // Inform about disabled items if some config models aren’t available
@@ -147,6 +162,30 @@ export function CodeGenerator() {
         setModel("local");
         setModelError("Unexpected error loading model registry. Using placeholder.");
       });
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      try {
+        const raw = localStorage.getItem("scriptai.disabled_models");
+        const arr = raw ? JSON.parse(raw) : [];
+        const disabled = Array.isArray(arr) ? arr.map(String) : [];
+        setDisabledIds(disabled);
+        setAvailableIds((prev) => prev.filter((id) => !disabled.includes(id)));
+      } catch {}
+    };
+    // Custom event dispatched by ModelManager when toggles change
+    window.addEventListener("scriptai:models-updated", handler as any);
+    return () => window.removeEventListener("scriptai:models-updated", handler as any);
+  }, []);
+
+  useEffect(() => {
+    // Load prompt history (local, last 10)
+    try {
+      const raw = localStorage.getItem("scriptai.prompt_history");
+      const arr = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(arr)) setHistory(arr.slice(0, 10));
+    } catch {}
   }, []);
 
   const exampleCode = {
@@ -214,27 +253,72 @@ ORDER BY u.username, p.category;`,
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
-    // Prevent generating with a model the server cannot handle
+    // Prevent generating with a model the server cannot handle or is locally disabled
     if (availableIds.length > 0 && !availableIds.includes(model)) {
       setErrorMessage("Selected model is not available. Configure API keys and try again.");
+      return;
+    }
+    if (disabledIds.includes(model)) {
+      setErrorMessage("Selected model is disabled in UI. Enable it in Model Manager.");
       return;
     }
     setIsGenerating(true);
     setErrorMessage("");
     setGeneratedCode("");
+
+    // Persist prompt to local history
     try {
-      const res = await fetch("/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, model, language }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const msg = (body && body.error) || `Request failed (${res.status})`;
-        setErrorMessage(msg);
+      const raw = localStorage.getItem("scriptai.prompt_history");
+      const arr = raw ? JSON.parse(raw) : [];
+      const next = [prompt, ...(Array.isArray(arr) ? arr : [])];
+      localStorage.setItem("scriptai.prompt_history", JSON.stringify(next.slice(0, 50)));
+      setHistory(next.slice(0, 10));
+    } catch {}
+
+    lastRequestRef.current = { prompt, model, language };
+
+    try {
+      if (useStreaming) {
+        const res = await fetch("/generate-stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, model, language }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          const msg = (body && body.error) || `Request failed (${res.status})`;
+          setErrorMessage(msg);
+        } else if (res.body) {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let done = false;
+          while (!done) {
+            const { value, done: d } = await reader.read();
+            done = d === true;
+            if (value) {
+              const chunk = decoder.decode(value);
+              setGeneratedCode((prev) => prev + chunk);
+            }
+          }
+        } else {
+          // Fallback: read full text
+          const text = await res.text();
+          setGeneratedCode(text || "");
+        }
       } else {
-        const code = body && body.code ? String(body.code) : "";
-        setGeneratedCode(code || "");
+        const res = await fetch("/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, model, language }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = (body && body.error) || `Request failed (${res.status})`;
+          setErrorMessage(msg);
+        } else {
+          const code = body && body.code ? String(body.code) : "";
+          setGeneratedCode(code || "");
+        }
       }
     } catch (e: any) {
       setErrorMessage(e?.message || "Network error");
@@ -249,6 +333,16 @@ ORDER BY u.username, p.category;`,
     navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyCurl = () => {
+    const body = lastRequestRef.current || { prompt, model, language };
+    const origin = window.location.origin;
+    const json = JSON.stringify(body);
+    const cmd = `curl -s -X POST "${origin}/generate" \\\n  -H "Content-Type: application/json" \\\n  -d '${json.replace(/'/g, "'\\''")}'`;
+    navigator.clipboard.writeText(cmd);
+    setCopiedCurl(true);
+    setTimeout(() => setCopiedCurl(false), 2000);
   };
 
   const displayCode = generatedCode || (exampleCode[language as keyof typeof exampleCode] || exampleCode.python);
@@ -329,12 +423,63 @@ ORDER BY u.username, p.category;`,
                 )}
                 <div className="space-y-2">
                   <label className="text-sm">Prompt</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {[
+                      "Bug fix helper",
+                      "Add unit tests",
+                      "Refactor function",
+                      "Optimize query",
+                      "Create API handler",
+                    ].map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        className="rounded-md border px-2 py-1 text-xs hover:bg-muted"
+                        onClick={() => setPrompt((p) => (p ? `${p}\n\n${t}: ` : `${t}: `))}
+                        aria-label={`Use template ${t}`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                   <Textarea
                     placeholder="Describe what you want to create..."
                     className="min-h-[160px] resize-none font-mono text-sm"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                   />
+                  {history.length > 0 && (
+                    <div className="mt-2 rounded-md border bg-muted/30 p-2">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Recent prompts</span>
+                        <button
+                          type="button"
+                          className="text-xs text-muted-foreground hover:underline"
+                          onClick={() => {
+                            try {
+                              localStorage.removeItem("scriptai.prompt_history");
+                            } catch {}
+                            setHistory([]);
+                          }}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <div className="grid gap-2">
+                        {history.map((h, idx) => (
+                          <button
+                            key={`${idx}-${h.slice(0, 12)}`}
+                            type="button"
+                            className="truncate text-left text-xs hover:underline"
+                            onClick={() => setPrompt(h)}
+                            title={h}
+                          >
+                            {h}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -387,6 +532,14 @@ ORDER BY u.username, p.category;`,
                       onChange={(e) => setLanguage(e.target.value.toLowerCase())}
                     />
                   </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <label className="text-sm">Streaming</label>
+                    <div className="text-xs text-muted-foreground">Stream response in real-time when available</div>
+                  </div>
+                  <Switch checked={useStreaming} onCheckedChange={setUseStreaming} />
                 </div>
 
                 <Button
@@ -468,6 +621,18 @@ ORDER BY u.username, p.category;`,
                       }}
                     >
                       <Download className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={handleCopyCurl}
+                      aria-label={copiedCurl ? "Copied" : "Copy as curl"}
+                    >
+                      {copiedCurl ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Terminal className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>

@@ -5,6 +5,7 @@ from flask import (
     jsonify,
     Response,
     g,
+    stream_with_context,
 )
 from typing import Any, TYPE_CHECKING
 
@@ -406,6 +407,213 @@ def generate_code():
             except Exception:
                 pass
         return jsonify(body)
+
+    except Exception as e:
+        response_time = time.time() - start_time
+        monitoring_manager.log_error(
+            "unexpected_error",
+            str(e),
+            {"client_ip": client_ip},
+            request_id=getattr(g, "request_id", None),
+        )
+        monitoring_manager.log_request(
+            model="unknown",
+            prompt_length=0,
+            response_time=response_time,
+            success=False,
+            client_ip=client_ip,
+            error=str(e),
+            request_id=getattr(g, "request_id", None),
+        )
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
+
+@app.route("/generate-stream", methods=["POST"])
+@limiter.limit(_generate_limit)
+def generate_code_stream():
+    start_time = time.time()
+    # Harden client IP extraction: honor first XFF entry only
+    xff = request.environ.get("HTTP_X_FORWARDED_FOR")
+    if isinstance(xff, str) and xff.strip():
+        client_ip: str = xff.split(",")[0].strip()
+    else:
+        addr = request.remote_addr
+        if isinstance(addr, str) and addr:
+            client_ip = addr
+        else:
+            rem = request.environ.get("REMOTE_ADDR")
+            client_ip = rem if isinstance(rem, str) and rem else "127.0.0.1"
+
+    try:
+        data = request.get_json(silent=True)
+        if data is None or not isinstance(data, dict):
+            return _json_error("Invalid JSON payload", 400)
+
+        prompt = data.get("prompt")
+        model = data.get("model", "openai")
+        debug = (
+            _is_truthy(data.get("debug"))
+            or _is_truthy(request.args.get("debug"))
+            or _is_truthy(request.headers.get("X-Debug-Decision"))
+        )
+
+        if not isinstance(prompt, str):
+            return _json_error("'prompt' must be a string", 400)
+
+        # Security validation
+        is_valid, error_msg = security_manager.validate_prompt(prompt)
+        if not is_valid:
+            security_manager.log_security_event(
+                "invalid_prompt", error_msg or "Unknown error", client_ip
+            )
+            return _json_error(error_msg or "Invalid prompt", 400)
+
+        # Rate limiting
+        within_limit, rate_error = security_manager.check_rate_limit(
+            client_ip or "unknown"
+        )
+        if not within_limit:
+            security_manager.log_security_event(
+                "rate_limit_exceeded", rate_error or "Rate limit exceeded", client_ip
+            )
+            return _json_error(rate_error or "Rate limit exceeded", 429)
+
+        if not prompt.strip():
+            return _json_error("No prompt provided", 400)
+
+        sanitized_prompt = security_manager.sanitize_input(prompt)
+
+        conv_id = (
+            data.get("conversation_id")
+            or data.get("conversationId")
+            or request.headers.get("X-Conversation-Id")
+        )
+        user_id = getattr(g, "user_id", None)
+        context_key = (conv_id or user_id or client_ip) or "unknown"
+        context_manager.add_message(context_key, "user", sanitized_prompt)
+
+        composed_prompt = context_manager.compose_prompt(context_key, sanitized_prompt)
+
+        # Smart routing when model == "auto"
+        router_info = None
+        selected_model = model
+        if model == "auto":
+            available_ids = _available_model_ids()
+            chosen, reason, ranked = _smart_route_model(sanitized_prompt, available_ids)
+            selected_model = chosen
+            if debug:
+                router_info = {
+                    "mode": "auto",
+                    "chosen": chosen,
+                    "reason": reason,
+                    "candidates": ranked,
+                    "available": available_ids,
+                }
+
+        adapter = get_adapter(selected_model)
+        if adapter is None:
+            return _json_error(f"Unknown model: {selected_model}", 400)
+
+        code, error = adapter.generate(composed_prompt)
+
+        response_time = time.time() - start_time
+        monitoring_manager.log_request(
+            model=selected_model,
+            prompt_length=len(prompt),
+            response_time=response_time,
+            success=error is None,
+            client_ip=client_ip,
+            error=error,
+            request_id=getattr(g, "request_id", None),
+        )
+
+        if error:
+            # Attempt fallback to a backup model when enabled
+            try:
+                if bool(app.config.get("ENABLE_FALLBACK", True)):
+                    preferred_order = [
+                        "openai",
+                        "anthropic",
+                        "gemini",
+                        "huggingface",
+                        "local",
+                    ]
+                    available_ids = _available_model_ids()
+                    candidates = [
+                        mid for mid in preferred_order if mid in available_ids and mid != selected_model
+                    ]
+
+                    try:
+                        monitoring_manager.log_error(
+                            "adapter_error",
+                            error or "Unknown adapter error",
+                            {"client_ip": client_ip, "model": selected_model},
+                            request_id=getattr(g, "request_id", None),
+                        )
+                    except Exception:
+                        pass
+
+                    for alt in candidates:
+                        alt_adapter = get_adapter(alt)
+                        if alt_adapter is None:
+                            continue
+                        alt_code, alt_err = alt_adapter.generate(composed_prompt)
+                        if alt_err is None and alt_code:
+                            try:
+                                monitoring_manager.log_request(
+                                    model=alt,
+                                    prompt_length=len(prompt),
+                                    response_time=time.time() - start_time,
+                                    success=True,
+                                    client_ip=client_ip,
+                                    error=None,
+                                    request_id=getattr(g, "request_id", None),
+                                )
+                            except Exception:
+                                pass
+                            try:
+                                context_manager.add_message(context_key, "assistant", alt_code)
+                            except Exception:
+                                pass
+                            code = alt_code
+                            selected_model = alt
+                            break
+                        else:
+                            try:
+                                monitoring_manager.log_error(
+                                    "adapter_error",
+                                    alt_err or "Unknown adapter error",
+                                    {"client_ip": client_ip, "model": alt, "fallback_from": selected_model},
+                                    request_id=getattr(g, "request_id", None),
+                                )
+                            except Exception:
+                                pass
+            except Exception:
+                pass
+
+        if not code:
+            status_code = (
+                502
+                if selected_model in {"openai", "huggingface", "anthropic", "gemini"}
+                else 500
+            )
+            return _json_error(error or "No code generated", status_code)
+
+        # Success: record assistant message to context
+        try:
+            context_manager.add_message(context_key, "assistant", code or "")
+        except Exception:
+            pass
+
+        def _chunk_text(text: str, size: int = 512):
+            for i in range(0, len(text), size):
+                yield text[i : i + size]
+
+        def _generate_stream():
+            for chunk in _chunk_text(code):
+                yield chunk
+
+        return Response(stream_with_context(_generate_stream()), mimetype="text/plain")
 
     except Exception as e:
         response_time = time.time() - start_time

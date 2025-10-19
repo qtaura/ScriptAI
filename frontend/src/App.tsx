@@ -8,6 +8,7 @@ import { Features } from "./components/Features";
 import { DualInterface } from "./components/DualInterface";
 import { Footer } from "./components/Footer";
 import { MetricsPanel } from "./components/MetricsPanel";
+import { ModelManager } from "./components/ModelManager";
 
 export default function App() {
   useEffect(() => {
@@ -34,6 +35,7 @@ export default function App() {
         <Hero />
         <ModelComparison />
         <CodeGenerator />
+        <ModelManager />
         <HowItWorks />
         <Features />
         <DualInterface />

@@ -45,6 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docs: `docs/plugins.md` with plugin anatomy, quickstart, testing, and best practices.
 - README: new "Plugin Development" section linking to the docs and template.
 
+### Frontend Polish
+- ModelManager panel to enable/disable providers; persists to `localStorage`.
+- Integrated ModelManager into app layout alongside Code Generator.
+- Prompt templates and recent prompt history in Code Generator for quick reuse.
+- Streaming API endpoint `POST /generate-stream` emits chunked plain text for realtime code.
+- Minor spacing and label adjustments in the prompt area.
+
 ### CI & Automated Workflow Polish
 - Separate jobs for backend tests, frontend unit tests, and Playwright e2e.
 - Backend coverage (`coverage.xml` + HTML) uploaded to Codecov and as artifacts.
