@@ -24,7 +24,7 @@ def read_requirements():
 
 setup(
     name="scriptai",
-    version="1.5.0",
+    version="1.7.0",
     author="ScriptAI Team",
     author_email="team@scriptai.dev",
     description="Enterprise-Grade AI-Powered Code Generation Platform",
