@@ -6,6 +6,7 @@ limiter instance from app.py.
 """
 from __future__ import annotations
 
+import os
 from typing import Any
 
 try:
@@ -46,7 +47,20 @@ def init_limiter(app: Any) -> Any:
 
         return "127.0.0.1"
 
-    return Limiter(key_func=_rate_key_func, app=app, default_limits=["100 per hour"])
+    try:
+        storage_uri = os.getenv("RATELIMIT_STORAGE_URI")
+    except Exception:
+        storage_uri = None
+
+    default_limit = os.getenv("RATELIMIT_DEFAULT", "100 per hour")
+    if storage_uri:
+        return Limiter(
+            key_func=_rate_key_func,
+            app=app,
+            default_limits=[default_limit],
+            storage_uri=storage_uri,
+        )
+    return Limiter(key_func=_rate_key_func, app=app, default_limits=[default_limit])
 
 
 class _NoopLimiter:

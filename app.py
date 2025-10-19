@@ -662,7 +662,15 @@ def get_stats():
 
 def main():
     """GUI script entry point for running the Flask app."""
-    app.run(debug=True)
+    import os
+
+    port = int(os.getenv("PORT", "5000"))
+    host = os.getenv("HOST", "0.0.0.0")
+    debug_env = os.getenv("FLASK_DEBUG", os.getenv("DEBUG", "0")).strip().lower()
+    debug = debug_env in ("1", "true", "yes", "on")
+
+    # In production environments (e.g., Railway), bind to 0.0.0.0 and disable reloader
+    app.run(host=host, port=port, debug=debug, use_reloader=debug)
 
 
 if __name__ == "__main__":
