@@ -7,9 +7,12 @@
   <p>
     <a href="#what-is-scriptai">What is ScriptAI?</a> •
     <a href="#quickstart">Quickstart</a> •
+    <a href="#live-demo">Live Demo</a> •
     <a href="#features">Features</a> •
+    <a href="#models--adapters">Models & Adapters</a> •
     <a href="#usage">Usage</a> •
     <a href="#api">API</a> •
+    <a href="#api-error-reference">API Error Reference</a> •
     <a href="#security--observability">Security & Observability</a> •
     <a href="#architecture">Architecture</a> •
     <a href="#development">Development</a> •
@@ -62,6 +65,13 @@ Notes
 - On Vercel, the API is available under `/api/*` (e.g., `/api/generate`). Locally it’s at the root (e.g., `/generate`).
 - The SPA is served at `/` by default.
 
+## Live Demo
+
+- Live URL: `https://your-scriptai-deployment.vercel.app/` (update with your domain).
+- API base: `https://your-scriptai-deployment.vercel.app/api` for endpoints like `/api/generate`.
+- Deploy on Vercel: import this repo and configure environment variables such as `OPENAI_API_KEY`, `HUGGINGFACE_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, and optional `REQUEST_SIGNATURE_SECRET`.
+- Local demo: run `py -3 app.py` and optionally `npm run dev` in `frontend/`. Visit `http://127.0.0.1:5000/` for the API and `http://localhost:5174/` for the SPA dev server.
+
 ## Features
 - Provider‑agnostic model adapters: OpenAI, Anthropic Claude, Google Gemini, HuggingFace, and a Local stub.
 - Dynamic model registry: UI reads `modelCards.json` and intersects with server‑reported availability.
@@ -74,6 +84,13 @@ Notes
 - Use `model: "auto"` to let the backend choose the best available provider based on prompt characteristics (length, language hints) and configured credentials.
 - Add `"debug": true` in the request body (or `?debug=1` or header `X‑Debug‑Decision: 1`) to receive a human‑readable explanation and ranked candidates.
 - Keeps your responses flowing with the existing fallback chain if the primary provider errors.
+
+## Models & Adapters
+- Built‑in adapters: `openai`, `anthropic`, `gemini`, `huggingface`, `local`.
+- Availability: `GET /models` lists adapters whose `is_available()` checks pass based on configured API keys.
+- Configuration: set `OPENAI_API_KEY`, `HUGGINGFACE_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY` to enable providers.
+- Fallback: set `ENABLE_FALLBACK=true|false` to control cross‑provider fallback.
+- Custom adapters: drop Python files in `plugins/` or point `SCRIPT_AI_PLUGINS_DIR` to a folder. Implement a subclass of `model_adapters.ModelAdapter` and expose `register(register_adapter)`. See `plugins/hello_world_adapter.py` and `docs/plugins.md`.
 
 ## Usage
 
@@ -96,6 +113,13 @@ Benchmark
 ```
 python cli.py benchmark "Write a factorial function" --models all --iterations 3 --json
 ```
+
+#### Tips
+- Switch models in interactive mode: `model <id>` (openai, huggingface, anthropic, gemini, local).
+- Privacy: use `--privacy` or `--stateless` to avoid config/history persistence and disable file logging.
+- Save output: `save <filename>` in interactive mode, or `--file` in direct mode.
+- Benchmark options: `--models`, `--iterations`, `--json`, `--save-csv <path>`.
+- Resume logging: `--resume` appends to the previous CLI session (ignored in privacy/stateless mode).
 
 ## API
 
@@ -139,6 +163,15 @@ Endpoints
 Errors
 - Standard JSON: `{ "error": "message" }` with appropriate HTTP status.
 
+## API Error Reference
+- `rate_limit_exceeded` — returns `429 Too Many Requests`; enforced per client IP.
+- `adapter_error` — typically `502 Bad Gateway`; logged when a provider fails during generation or fallback.
+- `unexpected_error` — returns `500 Internal Server Error`; for unhandled exceptions in routes.
+- `upstream_error` — `502 Bad Gateway`; indicates upstream provider failure.
+- `boom` — `500`; used only in tests to simulate an unhandled adapter exception.
+
+Logged fields include `error_type`, `error_message`, `context`, and `request_id`. See `monitoring.py::MonitoringManager.log_error` for implementation details. For a deeper breakdown, check `docs/errors.md`.
+
 ## Security & Observability
 
 Security
@@ -155,6 +188,15 @@ Data privacy mode
 Observability
 - Structured JSON logs via `monitoring.JSONFormatter` with `request_id` propagation (`X‑Request‑ID`).
 - Prometheus metrics at `/metrics` and lightweight usage/performance stats at `/stats` and `/performance`.
+
+### Security Events
+- `signature_missing_secret`, `signature_missing`, `signature_missing_timestamp` — `401 Unauthorized` when required config or headers are absent.
+- `signature_bad_format` — `400 Bad Request` when the signature header format is invalid.
+- `signature_bad_timestamp`, `signature_timestamp_out_of_window` — `401 Unauthorized` for invalid or stale timestamps.
+- `signature_internal_error` — `500 Internal Server Error` if verification hits an internal failure.
+- `signature_mismatch` — `401 Unauthorized` when HMAC does not match base string `v1:{timestamp}:{body}`.
+
+Events are recorded via `SecurityManager.log_security_event(event_type, details, client_ip)`. See `security.py` for verification logic and examples.
 
 ## Configuration
 

@@ -76,6 +76,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored `app.py` to use the factory and registry; kept core endpoints (`/generate`, `/health`, `/stats`) and the JSON 429 handler. Removed duplicated security hooks and static/model routes now provided by blueprints.
 - Vercel handlers (`api/index.py`, `api/[...path].py`) continue exporting the same Flask WSGI `app`, so all public API paths remain unchanged. No client-visible route changes.
 
+### Documentation
+- README: added Live Demo, Models & Adapters, CLI Tips, API Error Reference, and Security Events sections.
+- Navigation: updated top anchors to include the new sections.
+- Docs: added `docs/errors.md` detailing API error types and signature-related security events.
+
 ## [1.6.0] - 2025-10-16
 
 ### Added
