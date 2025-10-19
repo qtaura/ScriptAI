@@ -437,5 +437,3 @@ def available_models() -> List[Dict[str, Any]]:
         pass
 
     return models
-
-# EOF
