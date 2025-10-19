@@ -20,6 +20,12 @@
     <a href="#testing">Testing</a> •
     <a href="#license">License</a>
   </p>
+
+  <p>
+    <a href="https://scriptai-production.up.railway.app" target="_blank"><strong>Live Demo →</strong></a>
+  </p>
+
+  <img src="static/images/readme-hero.png" alt="ScriptAI UI screenshot (v1.7.0)" width="900" />
 </div>
 
 [![CI](https://github.com/qtaura/ScriptAI/actions/workflows/ci.yml/badge.svg)](https://github.com/qtaura/ScriptAI/actions/workflows/ci.yml)
@@ -67,10 +73,10 @@ Notes
 
 ## Live Demo
 
-- Live URL: `https://your-scriptai-deployment.vercel.app/` (update with your domain).
-- API base: `https://your-scriptai-deployment.vercel.app/api` for endpoints like `/api/generate`.
-- Deploy on Vercel: import this repo and configure environment variables such as `OPENAI_API_KEY`, `HUGGINGFACE_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, and optional `REQUEST_SIGNATURE_SECRET`.
-- Local demo: run `py -3 app.py` and optionally `npm run dev` in `frontend/`. Visit `http://127.0.0.1:5000/` for the API and `http://localhost:5174/` for the SPA dev server.
+- Live URL: `https://scriptai-production.up.railway.app`
+- API base (production): `https://scriptai-production.up.railway.app` (root). In Vercel deployments, use `/api/*`.
+- Deploy notes: configure `OPENAI_API_KEY`, `HUGGINGFACE_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, and optional `REQUEST_SIGNATURE_SECRET`.
+- Local demo: run `py -3 app.py`. SPA dev server optional: `cd frontend && npm install && npm run dev` → `http://localhost:5174/`.
 
 ## Features
 - Provider‑agnostic model adapters: OpenAI, Anthropic Claude, Google Gemini, HuggingFace, and a Local stub.
